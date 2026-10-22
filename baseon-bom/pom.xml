@@ -52,6 +52,13 @@
             </dependency>
 
             <!-- 新增 Starter 时在此追加，与仓库模块同步维护 -->
+
+            <!-- ========== 测试工具（仅 test scope 使用） ========== -->
+            <dependency>
+                <groupId>com.tngtech.archunit</groupId>
+                <artifactId>archunit-junit5</artifactId>
+                <version>${archunit.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 </project>

@@ -14,6 +14,7 @@
 
     <modules>
         <module>baseon-bom</module>
+        <module>baseon-core</module>
         <module>samples/demo-service</module>
     </modules>
 
@@ -32,6 +33,8 @@
         <flatten-maven-plugin.version>1.6.0</flatten-maven-plugin.version>
         <maven-enforcer-plugin.version>3.4.1</maven-enforcer-plugin.version>
         <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
+        <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
+        <archunit.version>1.2.1</archunit.version>
     </properties>
 
     <!-- 内部模块统一继承第三方版本，业务工程则通过 baseon-bom 获得同样的版本 -->
@@ -50,6 +53,24 @@
                 <version>${spring-cloud.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+
+            <!--
+                内部构件版本：父 POM 服务脚手架自身构建 + demo，
+                baseon-bom 服务外部业务工程，两处需要同步维护。
+                （不能由父 POM import baseon-bom：同一 reactor 内的 BOM 在干净构建时尚未安装）
+            -->
+            <dependency>
+                <groupId>io.github.ayongbox</groupId>
+                <artifactId>baseon-core</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <!-- 构建期工具，仅 test scope 使用 -->
+            <dependency>
+                <groupId>com.tngtech.archunit</groupId>
+                <artifactId>archunit-junit5</artifactId>
+                <version>${archunit.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -80,6 +101,12 @@
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-maven-plugin</artifactId>
                     <version>${spring-boot.version}</version>
+                </plugin>
+                <!-- Maven 默认绑定的 surefire 版本过旧，不支持 JUnit 5，必须显式锁定 -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>${maven-surefire-plugin.version}</version>
                 </plugin>
             </plugins>
         </pluginManagement>
