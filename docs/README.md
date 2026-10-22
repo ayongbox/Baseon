@@ -21,7 +21,7 @@ docs/
 |---|---|---|
 | 0 期 | 根 POM + BOM + demo 验证工程 | ✅ 完成 |
 | 1 期 | baseon-core（model / tool / context）+ ArchUnit | 🟡 进行中（boot/cloud/db/secure/launch/spi 未建） |
-| 2 期 | starter-web + starter-trace | ⬜ 未开始 |
+| 2 期 | starter-web（异常、Jackson、上下文、日志、CORS） | ✅ 完成 |
 
 ## 能力矩阵
 
@@ -34,6 +34,8 @@ docs/
 | `baseon-core` · context | `SecurityUtil`、`ContextWrapper` | ✅ 可用 |
 | `baseon-core` · boot | `ThreadPoolFactory`、`TransactionUtil`、`SpringContextHolder` | ⬜ 未实现 |
 | `baseon-core` · cloud/db/secure/launch/spi | 对应抽象契约 | ⬜ 未实现 |
+| `baseon-starter-web` | 全局异常、Jackson 统一、用户上下文、请求日志脱敏、CORS | ✅ 可用 |
+| `baseon-starter-trace` | TraceId、MDC、线程池透传 | ⬜ 未实现 |
 
 ## 文档维护约定
 
