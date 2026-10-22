@@ -50,6 +50,11 @@
                 <artifactId>baseon-starter-web</artifactId>
                 <version>${revision}</version>
             </dependency>
+            <dependency>
+                <groupId>io.github.ayongbox</groupId>
+                <artifactId>baseon-starter-trace</artifactId>
+                <version>${revision}</version>
+            </dependency>
 
             <!-- 新增 Starter 时在此追加，与仓库模块同步维护 -->
 

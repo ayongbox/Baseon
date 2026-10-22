@@ -15,6 +15,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.stream.Collectors;
 
@@ -67,6 +68,14 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public ResponseEntity<R<Void>> handleMethodNotSupported(HttpRequestMethodNotSupportedException exception) {
         return build(ErrorType.METHOD_NOT_ALLOWED, CommonErrorCode.PARAM_INVALID.getCode(), "请求方法不支持");
+    }
+
+    /**
+     * 静态资源不存在（如浏览器自动请求 /favicon.ico）时返回 404，不记 ERROR 日志。
+     */
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<R<Void>> handleNoResourceFound(NoResourceFoundException exception) {
+        return build(ErrorType.NOT_FOUND, CommonErrorCode.NOT_FOUND.getCode(), "资源不存在");
     }
 
     @ExceptionHandler(Exception.class)
