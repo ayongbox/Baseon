@@ -16,6 +16,14 @@ public abstract class BaseEntity {
     private Long createBy;
     private Long updateBy;
 
+    /**
+     * 逻辑删除标记：0 未删除，1 已删除。
+     *
+     * <p>字段定义在内核、切面行为在 starter-mybatis-plus 配置，两者必须成对存在，
+     * 因此该字段不允许在各业务实体中重复声明。
+     */
+    private Integer deleted;
+
     public Long getId() {
         return id;
     }
@@ -54,5 +62,13 @@ public abstract class BaseEntity {
 
     public void setUpdateBy(Long updateBy) {
         this.updateBy = updateBy;
+    }
+
+    public Integer getDeleted() {
+        return deleted;
+    }
+
+    public void setDeleted(Integer deleted) {
+        this.deleted = deleted;
     }
 }

@@ -47,7 +47,10 @@ public final class ContextWrapper {
         };
     }
 
-    public static <T> Supplier<T> wrap(Supplier<T> task) {
+    /**
+     * 单独命名而非重载：{@code wrap(Callable)} 与 {@code wrap(Supplier)} 对无参 lambda 会产生歧义。
+     */
+    public static <T> Supplier<T> wrapSupplier(Supplier<T> task) {
         LoginUser captured = SecurityUtil.get();
         return () -> {
             LoginUser previous = SecurityUtil.get();
