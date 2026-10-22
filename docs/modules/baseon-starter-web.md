@@ -47,8 +47,14 @@ baseon:
     request-log:
       enabled: true
       max-body-length: 1000           # 超出截断并追加 ...(truncated)
+      # exclude-paths：配置后【完全覆盖】默认列表（/actuator/**、/favicon.ico、/error）
       exclude-paths:
         - /actuator/**
+        - /favicon.ico
+        - /error
+      # additional-exclude-paths：在默认/覆盖列表之上追加，互不影响
+      additional-exclude-paths:
+        - /internal/ping
     cors:
       allowed-origins: []             # 为空表示不开启跨域
       allowed-methods: [GET, POST, PUT, DELETE, PATCH, OPTIONS]
@@ -128,3 +134,7 @@ baseon:
    真正的敏感数据治理依赖字段级加密。
 4. **未知异常统一返回 500 + 通用文案**，堆栈只进日志不出响应体，避免泄露内部地址与实现细节。
 5. **异步任务拿不到上下文**：拦截器只负责当前请求线程，异步场景仍需 `ContextWrapper`。
+6. **排除路径的 5xx 仍强制打日志**：被排除的路径（如探活接口）返回 ≥500 时，
+   会输出一条简版访问日志（无出入参）。服务端错误必须可见，4xx 遵循排除规则保持安静。
+7. **exclude-paths 与 additional-exclude-paths 的语义不同**：前者配置后完全覆盖默认列表，
+   只想追加时用后者，避免把 `/actuator/**`、`/favicon.ico` 等默认排除项误覆盖。

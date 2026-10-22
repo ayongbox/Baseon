@@ -145,13 +145,25 @@ public class BaseonWebProperties {
 
     public static class RequestLog {
 
+        /** 框架默认排除的路径：健康检查与浏览器噪音请求 */
+        public static final List<String> DEFAULT_EXCLUDE_PATHS = List.of(
+                "/actuator/**",
+                "/favicon.ico",
+                "/error");
+
         private boolean enabled = true;
 
         /** 请求/响应体最大打印长度，超出截断 */
         private int maxBodyLength = 1000;
 
-        /** 不打印请求体的路径，默认放过健康检查 */
-        private List<String> excludePaths = new ArrayList<>(List.of("/actuator/**"));
+        /**
+         * 排除路径，配置后<b>完全覆盖</b> {@link #DEFAULT_EXCLUDE_PATHS}。
+         * 只想在默认基础上追加时使用 {@link #additionalExcludePaths}。
+         */
+        private List<String> excludePaths = new ArrayList<>(DEFAULT_EXCLUDE_PATHS);
+
+        /** 追加排除路径：在默认（或 excludePaths 覆盖后的）列表之上叠加，互不影响 */
+        private List<String> additionalExcludePaths = new ArrayList<>();
 
         public boolean isEnabled() {
             return enabled;
@@ -175,6 +187,14 @@ public class BaseonWebProperties {
 
         public void setExcludePaths(List<String> excludePaths) {
             this.excludePaths = excludePaths;
+        }
+
+        public List<String> getAdditionalExcludePaths() {
+            return additionalExcludePaths;
+        }
+
+        public void setAdditionalExcludePaths(List<String> additionalExcludePaths) {
+            this.additionalExcludePaths = additionalExcludePaths;
         }
     }
 

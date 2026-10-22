@@ -23,6 +23,10 @@
             <groupId>io.github.ayongbox</groupId>
             <artifactId>baseon-starter-web</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.github.ayongbox</groupId>
+            <artifactId>baseon-starter-trace</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

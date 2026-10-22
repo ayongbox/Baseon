@@ -15,6 +15,7 @@ import org.springframework.web.util.ContentCachingResponseWrapper;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -23,6 +24,10 @@ import java.util.Locale;
  * <p>仅缓存文本类请求体；multipart 与二进制流只记录访问日志，避免大文件占用内存。
  * 响应体通过 {@link ContentCachingResponseWrapper} 缓存后必须 copyBodyToResponse，
  * 否则客户端会收到空响应。
+ *
+ * <p>排除路径（excludePaths + additionalExcludePaths 合并生效）默认不打日志，
+ * 但响应状态码 ≥500 时仍强制输出一条简版访问日志——服务端错误必须可见，
+ * 不能被排除规则吞掉；4xx 属于客户端问题，遵循排除规则保持安静。
  */
 public class RequestLogFilter extends OncePerRequestFilter {
 
@@ -39,12 +44,24 @@ public class RequestLogFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
         BaseonWebProperties.RequestLog config = properties.getRequestLog();
-        if (!config.isEnabled() || isExcluded(request.getRequestURI())) {
+        if (!config.isEnabled()) {
             filterChain.doFilter(request, response);
             return;
         }
 
         long start = System.currentTimeMillis();
+        if (isExcluded(request.getRequestURI())) {
+            try {
+                filterChain.doFilter(request, response);
+            } finally {
+                if (response.getStatus() >= 500) {
+                    log.info("http method={} uri={} status={} cost={}ms (excluded path, server error)",
+                            request.getMethod(), request.getRequestURI(), response.getStatus(),
+                            System.currentTimeMillis() - start);
+                }
+            }
+            return;
+        }
         if (!isTextRequest(request)) {
             try {
                 filterChain.doFilter(request, response);
@@ -82,8 +99,12 @@ public class RequestLogFilter extends OncePerRequestFilter {
     }
 
     private boolean isExcluded(String uri) {
-        return properties.getRequestLog().getExcludePaths().stream()
-                .anyMatch(pattern -> pathMatcher.match(pattern, uri));
+        BaseonWebProperties.RequestLog config = properties.getRequestLog();
+        return matches(config.getExcludePaths(), uri) || matches(config.getAdditionalExcludePaths(), uri);
+    }
+
+    private boolean matches(List<String> patterns, String uri) {
+        return patterns.stream().anyMatch(pattern -> pathMatcher.match(pattern, uri));
     }
 
     private boolean isTextRequest(HttpServletRequest request) {

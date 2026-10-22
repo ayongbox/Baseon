@@ -16,6 +16,7 @@
         <module>baseon-bom</module>
         <module>baseon-core</module>
         <module>baseon-starter-web</module>
+        <module>baseon-starter-trace</module>
         <module>samples/demo-service</module>
     </modules>
 
@@ -69,6 +70,11 @@
             <dependency>
                 <groupId>io.github.ayongbox</groupId>
                 <artifactId>baseon-starter-web</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.ayongbox</groupId>
+                <artifactId>baseon-starter-trace</artifactId>
                 <version>${revision}</version>
             </dependency>
 

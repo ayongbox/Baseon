@@ -5,7 +5,7 @@
 
 ---
 
-## [1.0.0-SNAPSHOT] · 2 期：starter-web
+## [1.0.0-SNAPSHOT] · 2 期：starter-web + starter-trace
 
 **日期**：2026-10-22
 
@@ -17,8 +17,15 @@
 - 用户上下文拦截器：`X-User-Id` / `X-Tenant-Id` / `X-Username` → `SecurityUtil`，请求结束自动清理。
 - 请求日志过滤器：出入参脱敏（password / token / mobile / Bearer 等）+ 截断 + 状态码 + 耗时；multipart 与二进制跳过。
 - CORS：默认关闭，配置 `baseon.web.cors.allowed-origins` 后开启。
+- `baseon-starter-trace` 模块：TraceId 生成/继承、MDC 注入、线程池/异步/定时任务透传。
+- `TraceIdFilter`：请求入口生成 32 位 TraceId，响应头返回 `X-Trace-Id`，请求结束清理。
+- `MdcTaskDecorator`：自动包装所有 `ThreadPoolTaskExecutor`，异步任务携带父线程 MDC。
+- `ScheduledTraceAspect`：定时任务执行周期内生成独立 TraceId，执行结束清理。
 - `BizException` 增加 `ErrorType` 字段；`ErrorType` 增加 `METHOD_NOT_ALLOWED(405)`。
-- 13 个单元测试（异常映射、上下文拦截器、日志脱敏）。
+- 静态资源 404 治理：`NoResourceFoundException` 返回 404，不再走未知异常的 500 + ERROR 堆栈（favicon.ico 场景）。
+- 请求日志排除规则双 key：`exclude-paths`（完全覆盖默认列表）+ `additional-exclude-paths`（在默认之上追加）。
+- 排除路径的 5xx 强制打简版访问日志：服务端错误不被排除规则吞掉；4xx 遵循排除规则保持安静。
+- 25 个单元测试（web 13 个 + trace 12 个）。
 
 ### 注意事项
 
@@ -27,10 +34,14 @@
 3. **日志脱敏不完整**：正则只覆盖常见敏感字段，不能替代字段级加密与日志平台规则；`max-body-length` 默认 1000。
 4. **可覆盖**：所有自动装配 Bean 均带 `@ConditionalOnMissingBean`，业务声明同类型 Bean 即生效。
 5. **响应日志固定 UTF-8**：Tomcat 的 `getCharacterEncoding()` 默认 ISO-8859-1，直接使用会导致中文乱码（详见 pitfalls P-006）。
+6. **TraceId 与业务上下文分离**：trace 只管 traceId，userId/tenantId 仍由 web 拦截器负责；两者不互相依赖。
+7. **定时任务 TraceId 独立生成**：与请求 TraceId 无关联，用于排查定时任务自身执行链路。
+8. **MDC 清理必须成对**：`TraceIdFilter` 和 `ScheduledTraceAspect` 都在 finally 中清理，业务代码不得自行 `MDC.clear()`。
 
 ### 升级动作
 
 - demo 移除 `spring-boot-starter-web` 直接依赖，改为依赖 `baseon-starter-web`，`baseon-core` 由其传递引入。
+- demo 新增 `baseon-starter-trace` 依赖。
 
 ---
 
