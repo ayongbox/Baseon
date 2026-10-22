@@ -18,15 +18,10 @@
     <description>0 期验证工程：用于验证 BOM 版本管控与 reactor 构建链路，不对外发布</description>
 
     <dependencies>
+        <!-- 1 期起由 starter-web 统一提供 Web 能力，baseon-core 由其传递引入 -->
         <dependency>
             <groupId>io.github.ayongbox</groupId>
-            <artifactId>baseon-core</artifactId>
-        </dependency>
-
-        <!-- 0 期仅验证原生 Boot 能力，1 期起替换为 baseon-starter-web -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
+            <artifactId>baseon-starter-web</artifactId>
         </dependency>
     </dependencies>
 

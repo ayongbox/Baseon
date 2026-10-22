@@ -23,6 +23,9 @@ public enum ErrorType {
     /** 资源不存在 */
     NOT_FOUND(404),
 
+    /** HTTP 方法不支持 */
+    METHOD_NOT_ALLOWED(405),
+
     /** 重复请求 / 状态冲突 */
     DUPLICATE(409),
 
