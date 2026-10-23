@@ -74,3 +74,39 @@
 **解决**：响应体固定按 UTF-8 解码；请求体仍按 `request.getCharacterEncoding()`（浏览器/客户端会正确声明）。
 
 **规避**：日志、消息队列、文件写入等场景不要信任容器的默认编码，显式指定 UTF-8；只有确实来自外部声明的编码才动态解析。
+
+---
+
+## P-007 · Spring Cloud 4.x 中 LoadBalancerClientFactory 包名迁移
+
+**现象**：编译报错 `找不到符号: 类 LoadBalancerClientFactory，位置: 程序包 org.springframework.cloud.client.loadbalancer`。
+
+**根因**：`org.springframework.cloud.client.loadbalancer.LoadBalancerClientFactory` 在 Spring Cloud Commons 3.x 中已被标记废弃，4.x（Cloud 2022+）正式移除，新位置是 `org.springframework.cloud.loadbalancer.support.LoadBalancerClientFactory`。
+
+**解决**：两处 import 改为 `org.springframework.cloud.loadbalancer.support.LoadBalancerClientFactory`。
+
+**规避**：使用在旧版本中被 `@Deprecated` 的框架类时，先确认当前版本是否仍存在；升级 Spring Cloud 大版本后优先全局搜索 `org.springframework.cloud.client.loadbalancer` 包下的引用。
+
+---
+
+## P-008 · 引入 nacos config 后启动报 No spring.config.import property
+
+**现象**：引入 `spring-cloud-starter-alibaba-nacos-config` 后启动失败：`No spring.config.import property has been defined`。
+
+**根因**：SCA 配置中心默认开启 import-check（`spring.cloud.nacos.config.import-check.enabled=true`），强制要求显式声明 `spring.config.import`，防止用户误以为配置中心已生效。
+
+**解决**：声明 `spring.config.import: optional:nacos:<dataId>.yaml`，`optional:` 前缀允许配置不存在也能启动；确实不用配置中心时显式关闭检查。
+
+**规避**：只要依赖里带了 nacos config，就必须在 application.yml 写 `spring.config.import`，即使是纯注册中心使用场景。
+
+---
+
+## P-009 · Nacos 3.x 控制台端口与客户端端口分离
+
+**现象**：`server-addr` 配置为控制台地址 `localhost:8181`，服务启动注册时报 `NacosException: Client not connected, current status:STARTING`。
+
+**根因**：Nacos 3.x 拆分了端口：控制台 UI 独立端口（本机 8181），客户端 API 与 gRPC 在主端口（默认 8848，gRPC 为 9848/9849）。客户端连控制台端口时 HTTP 可达（返回 404/500 误导判断），但 gRPC 握手失败。
+
+**解决**：`spring.cloud.nacos.server-addr` 指向主端口 `localhost:8848`；浏览器访问控制台仍用 8181。
+
+**规避**：区分「给人用的控制台地址」与「给客户端用的 server-addr」；排查注册问题时先 `lsof` 确认服务端真实监听端口，客户端 gRPC 端口 = 主端口 + 1000。

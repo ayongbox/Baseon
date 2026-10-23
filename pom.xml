@@ -17,7 +17,11 @@
         <module>baseon-core</module>
         <module>baseon-starter-web</module>
         <module>baseon-starter-trace</module>
+        <module>baseon-starter-cloud-nacos</module>
+        <module>baseon-starter-cloud-feign</module>
+        <module>baseon-starter-loadbalance</module>
         <module>samples/demo-service</module>
+        <module>samples/demo-service-b</module>
     </modules>
 
     <properties>
@@ -31,6 +35,7 @@
 
         <spring-boot.version>3.2.12</spring-boot.version>
         <spring-cloud.version>2023.0.5</spring-cloud.version>
+        <spring-cloud-alibaba.version>2023.0.3.4</spring-cloud-alibaba.version>
 
         <flatten-maven-plugin.version>1.6.0</flatten-maven-plugin.version>
         <maven-enforcer-plugin.version>3.4.1</maven-enforcer-plugin.version>
@@ -56,6 +61,14 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <!-- SCA 2023.0.3.x 适配 Boot 3.2.x / Cloud 2023.0.x，提供 Nacos 注册发现与配置中心 -->
+            <dependency>
+                <groupId>com.alibaba.cloud</groupId>
+                <artifactId>spring-cloud-alibaba-dependencies</artifactId>
+                <version>${spring-cloud-alibaba.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
 
             <!--
                 内部构件版本：父 POM 服务脚手架自身构建 + demo，
@@ -75,6 +88,21 @@
             <dependency>
                 <groupId>io.github.ayongbox</groupId>
                 <artifactId>baseon-starter-trace</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.ayongbox</groupId>
+                <artifactId>baseon-starter-cloud-nacos</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.ayongbox</groupId>
+                <artifactId>baseon-starter-cloud-feign</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.ayongbox</groupId>
+                <artifactId>baseon-starter-loadbalance</artifactId>
                 <version>${revision}</version>
             </dependency>
 

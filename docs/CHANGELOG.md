@@ -5,6 +5,44 @@
 
 ---
 
+## [1.0.0-SNAPSHOT] · 3 期：微服务三件套（cloud-nacos + cloud-feign + loadbalance）
+
+**日期**：2026-10-23
+
+### 新增能力
+
+- `baseon-starter-cloud-nacos`：引入 SCA 2023.0.3.4，一个依赖同时获得注册发现 + 配置中心；`ConfigHolder` 直读 `Environment`，配置刷新免 `@RefreshScope`。
+- 三档注册策略 `baseon.cloud.nacos.register-strategy`：`LOCAL_NO_REGISTER`（本地起服务不污染注册中心）/ `LOCAL_REGISTER_PRIVATE`（注册但打 `baseon.local=true` 标记，其他服务默认不路由过来）/ `FULL_REGISTER`（生产默认）。
+- `baseon-starter-cloud-feign`：`ContextPropagateRequestInterceptor` 自动透传 `X-Trace-Id`、`X-User-Id` / `X-Tenant-Id` / `X-Username`、`X-Gray-Tag`，不覆盖调用方已显式设置的请求头；默认超时 connect 3s / read 5s，默认不重试（`baseon.cloud.feign.retry.enabled=true` 才开启）。
+- `baseon-starter-loadbalance`：`GrayTagLoadBalancer` 灰度路由——带 `X-Gray-Tag` 只选元数据 `gray-tag` 相同实例（无匹配回退全部 + WARN 降级）；不带标签排除灰度实例与 `baseon.local` 本地实例；对 Feign / RestTemplate / WebClient 全生效。
+- `baseon-core` 新增 `GrayContext`（ThreadLocal）与 `CloudHeaders` 常量（`X-Gray-Tag` / `gray-tag` / `baseon.local`，固定不可配置，防三 Starter 配置漂移）。
+- `GrayContextFilter`：Servlet 入口解析 `X-Gray-Tag` 写入 `GrayContext`，请求结束自动清理。
+- `samples/demo-service-b`（8081）：下游验证服务，回显请求头与上下文。
+- `demo-service` 接入三件套：`@EnableFeignClients` + `DemoBClient` + `/demo/call-b`（跨服务调用）+ `/demo/config-info`（配置中心读取）。
+- 23 个新单元测试（nacos 5 + feign 6 + loadbalance 8 + core 4），全量 72 个单测通过。
+
+### 联调验证记录
+
+- 两服务注册 Nacos 成功，`demo-service-b` 双实例（8081 正常 / 8082 带 `gray-tag=gray` 元数据）。
+- 无标签调用 `/demo/call-b` → 稳定路由 8081；带 `X-Gray-Tag: gray` → 路由 8082；带不存在标签 → 回退正常实例并打 WARN。
+- traceId / userId 经 Feign 透传，下游请求头与上下文恢复完整，两服务日志 traceId 一致。
+- Nacos 发布 `baseon-demo-service.yaml` 后 `/demo/config-info` 无需重启读到新值。
+
+### 注意事项
+
+1. **Nacos 3.x 端口分离**：`server-addr` 必须指向主端口（默认 8848，客户端 API + gRPC），8181 只是控制台 UI，指向它会导致 `Client not connected`（详见 pitfalls P-009）。
+2. **Header 常量不可配置**：`X-Gray-Tag` / `gray-tag` / `baseon.local` 三个名称固定在 `CloudHeaders`，灰度链路跨三个 Starter，允许各自配置会出现同链路名称不一致的隐蔽故障。
+3. **Feign 默认不重试**：超时即失败，由网关或调用方决定重试策略；开启重试前必须确认下游接口幂等。
+4. **灰度回退是降级不是路由**：无匹配灰度实例时回退到全部实例保证可用，WARN 日志是定位灰度发布遗漏的关键信号，不要屏蔽。
+5. **SCA 配置中心强制 import-check**：引入 nacos config 后必须声明 `spring.config.import`（可用 `optional:nacos:` 前缀）或显式关闭检查，否则启动失败（详见 pitfalls P-008）。
+
+### 升级动作
+
+- 父 POM 与 `baseon-bom` 引入 `spring-cloud-alibaba-dependencies 2023.0.3.4`，登记三个新构件。
+- `demo-service` 新增三个 starter 依赖与 `spring.config.import=optional:nacos:baseon-demo-service.yaml`。
+
+---
+
 ## [1.0.0-SNAPSHOT] · 2 期：starter-web + starter-trace
 
 **日期**：2026-10-22
