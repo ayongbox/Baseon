@@ -1,0 +1,19 @@
+server:
+  port: 8092
+
+spring:
+  application:
+    name: demo-service-b
+  cloud:
+    nacos:
+      server-addr: localhost:8848
+      username: nacos
+      password: nacos
+  # nacos starter 含配置中心能力，optional 前缀表示配置不存在也能启动
+  config:
+    import:
+      - optional:nacos:demo-service-b.yaml
+
+logging:
+  level:
+    io.github.ayongbox: debug

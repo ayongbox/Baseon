@@ -27,6 +27,19 @@
             <groupId>io.github.ayongbox</groupId>
             <artifactId>baseon-starter-trace</artifactId>
         </dependency>
+        <!-- 3 期：注册发现 + Feign 透传 + 灰度路由 -->
+        <dependency>
+            <groupId>io.github.ayongbox</groupId>
+            <artifactId>baseon-starter-cloud-nacos</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.ayongbox</groupId>
+            <artifactId>baseon-starter-cloud-feign</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.ayongbox</groupId>
+            <artifactId>baseon-starter-loadbalance</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

@@ -1,9 +1,18 @@
 server:
-  port: 8080
+  port: 8091
 
 spring:
   application:
     name: baseon-demo-service
+  cloud:
+    nacos:
+      server-addr: localhost:8848
+      username: nacos
+      password: nacos
+  # 配置中心：optional 前缀表示配置不存在也能启动；dataId 默认 DEFAULT_GROUP
+  config:
+    import:
+      - optional:nacos:baseon-demo-service.yaml
 
 logging:
   level:

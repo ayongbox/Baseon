@@ -1,0 +1,2 @@
+org.springframework.boot.env.EnvironmentPostProcessor=\
+  io.github.ayongbox.baseon.starter.cloud.feign.config.FeignDefaultsEnvironmentPostProcessor
