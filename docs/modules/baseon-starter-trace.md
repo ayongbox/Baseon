@@ -96,12 +96,35 @@ if (traceId != null) {
 5. **Feign/HTTP 客户端透传**：当前版本未实现，需要额外在 Feign 拦截器或 RestTemplate 拦截器中读取 `TraceIdUtil.get()` 并写入请求头。
 6. **MQ 消息透传**：当前版本未实现，需要 Producer 发送时写入消息头、Consumer 消费时写入 MDC。
 
-## 日志 Pattern 建议
+## 内置统一 logback 配置
 
-在 `logback-spring.xml` 或 `logback.xml` 中：
+模块自带 `logback-spring.xml`（classpath 根），业务**不提供自己的同名文件时自动生效**。
+格式：
 
-```xml
-<pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [%X{traceId}] %-5level %logger{36} - %msg%n</pattern>
+```
+2026-10-23 08:00:55.778  INFO [baseon-demo-service] [nio-8080-exec-1] [de67f3f8697242ff8f08a984110eb1c3] i.g.a.b.s.web.log.RequestLogFilter : http method=GET ...
 ```
 
-`%X{traceId}` 从 MDC 读取，无值时显示为空字符串。
+字段顺序：时间 → 级别 → 应用名（`spring.application.name`）→ 线程名 → **traceId** → logger → 消息。
+非请求线程（启动、定时任务触发前）traceId 位置为空 `[]`。
+
+### 业务自定义
+
+在业务 `src/main/resources/` 放置自己的 `logback-spring.xml` 即整体覆盖（classes 目录优先于依赖 jar）。
+**自定义时必须保留 `%X{traceId:-}` 占位**，否则全链路日志失去关联键。推荐复用 Spring Boot 的官方片段：
+
+```xml
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    <property name="CONSOLE_LOG_PATTERN" value="...你自己的 pattern，保留 %X{traceId:-}..."/>
+    <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+</configuration>
+```
+
+### 生产建议
+
+容器化部署只输出 console，由采集 Agent（Filebeat/Fluent Bit）收集，**不要配置文件 appender**；
+本地文件滚动策略各异，交给平台统一处理。
