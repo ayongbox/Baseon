@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Baseon 统一日志格式。
+
+  生效方式：本文件位于 starter-trace 的 classpath 根，业务未提供自己的
+  logback-spring.xml 时由 Spring Boot 自动加载；业务在 resources 下放置
+  同名文件即可整体覆盖（业务 classes 目录优先于依赖 jar）。
+
+  自定义时建议保留 %X{traceId:-} 占位，否则异步/全链路日志会失去关联键。
+-->
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+    <springProperty scope="context" name="app" source="spring.application.name" defaultValue="app"/>
+
+    <!-- 覆盖 Spring Boot 默认 pattern：在线程名后注入 traceId，方便 grep 全链路 -->
+    <property name="CONSOLE_LOG_PATTERN"
+              value="%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(%5p) %clr([${app}]){magenta} %clr([%15.15t]){faint} %clr([%X{traceId:-}]){yellow} %clr(%-40.40logger{39}){cyan} : %m%n%wEx"/>
+
+    <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+</configuration>

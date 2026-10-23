@@ -25,6 +25,7 @@
 - 静态资源 404 治理：`NoResourceFoundException` 返回 404，不再走未知异常的 500 + ERROR 堆栈（favicon.ico 场景）。
 - 请求日志排除规则双 key：`exclude-paths`（完全覆盖默认列表）+ `additional-exclude-paths`（在默认之上追加）。
 - 排除路径的 5xx 强制打简版访问日志：服务端错误不被排除规则吞掉；4xx 遵循排除规则保持安静。
+- 统一 logback 配置：starter-trace 内置 `logback-spring.xml`，日志行自动携带应用名与 traceId；业务放同名文件可整体覆盖。
 - 25 个单元测试（web 13 个 + trace 12 个）。
 
 ### 注意事项
