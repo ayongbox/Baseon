@@ -16,4 +16,6 @@ spring:
 
 logging:
   level:
-    io.github.ayongbox: debug
+    # 仅本地验证：demo 包整体 DEBUG，生产环境务必删除本段或调至 INFO。
+    # 框架 starter 包保持默认 INFO。
+    io.github.ayongbox.baseon.demo: debug

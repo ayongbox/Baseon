@@ -110,3 +110,27 @@
 **解决**：`spring.cloud.nacos.server-addr` 指向主端口 `localhost:8848`；浏览器访问控制台仍用 8181。
 
 **规避**：区分「给人用的控制台地址」与「给客户端用的 server-addr」；排查注册问题时先 `lsof` 确认服务端真实监听端口，客户端 gRPC 端口 = 主端口 + 1000。
+
+---
+
+## P-010 · MyBatis-Plus 3.5.9 拦截器被拆到独立构件
+
+**现象**：引入 `mybatis-plus-spring-boot3-starter:3.5.9` 后，`PaginationInnerInterceptor` / `TenantLineInnerInterceptor` / `TenantLineHandler` 编译报「程序包不存在」。
+
+**根因**：MP 自 3.5.9 起把依赖 JSqlParser 的拦截器拆分到独立构件 `mybatis-plus-jsqlparser`，starter 不再传递引入。
+
+**解决**：父 POM `dependencyManagement` 追加 `com.baomidou:mybatis-plus-jsqlparser:${mybatis-plus.version}`，使用方模块显式声明依赖（不写版本）。
+
+**规避**：升级 MP 版本时先核对官方「版本差异」说明；`IgnoreStrategy` 在 `com.baomidou.mybatisplus.core.plugins` 包（不在旧版的 `core.toolkit`）。
+
+---
+
+## P-011 · AbstractRoutingDataSource 读不到 @Transactional(readOnly=true)
+
+**现象**：读写分离场景中，`@Transactional(readOnly = true)` 方法依然路由到主库；`TransactionSynchronizationManager.isCurrentTransactionReadOnly()` 在路由时永远返回 false。
+
+**根因**：`DataSourceTransactionManager.doBegin()` 获取连接（触发路由决策）时，readOnly 标记还没注册——`prepareSynchronization` 在 `doBegin` **之后**才把 readOnly 写入同步上下文。时序上路由决策必然早于标记可见。
+
+**解决**：`ReadOnlyRouteAspect` 以 `@Order(HIGHEST_PRECEDENCE)` 在事务拦截器之前执行，读 `@Transactional` 注解元数据，把只读标记写入 `DataSourceContextHolder`，路由数据源凭标记轮询从库。嵌套事务（synchronization 已激活）不切换——连接已由外层事务绑定。
+
+**规避**：任何「依赖事务属性做数据源路由」的方案都不能在 `determineCurrentLookupKey` 里读事务同步状态；同类库（dynamic-datasource）的处理口径是「事务内强制走主库」，与本期方案的差异在于读多写少场景的成本取舍。

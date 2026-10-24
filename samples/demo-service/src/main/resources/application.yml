@@ -13,7 +13,28 @@ spring:
   config:
     import:
       - optional:nacos:baseon-demo-service.yaml
+  # 4 期：本地 Redis（默认 6379，无密码）
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+
+# 4 期：动态数据源，本地用同实例两个 schema 模拟主从
+baseon:
+  datasource:
+    master:
+      url: jdbc:mysql://127.0.0.1:3306/baseon_master?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+      username: root
+      password: root
+    slaves:
+      - url: jdbc:mysql://127.0.0.1:3306/baseon_slave?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+        username: root
+        password: root
 
 logging:
   level:
-    io.github.ayongbox: debug
+    # 仅本地验证：demo 包整体 DEBUG，其中 mapper 会逐条打印 SQL 与绑定参数
+    #（==> Preparing / Parameters），便于观察租户改写与自动填充。
+    # 生产环境务必删除本段或调至 INFO——SQL 逐条输出在高并发下会打爆日志，
+    # 且参数值可能含敏感数据。框架 starter 包保持默认 INFO。
+    io.github.ayongbox.baseon.demo: debug

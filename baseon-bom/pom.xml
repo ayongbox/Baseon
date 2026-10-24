@@ -70,6 +70,31 @@
                 <artifactId>baseon-starter-loadbalance</artifactId>
                 <version>${revision}</version>
             </dependency>
+            <dependency>
+                <groupId>io.github.ayongbox</groupId>
+                <artifactId>baseon-starter-datasource</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.ayongbox</groupId>
+                <artifactId>baseon-starter-mybatis-plus</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.ayongbox</groupId>
+                <artifactId>baseon-starter-redis</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.ayongbox</groupId>
+                <artifactId>baseon-starter-cache</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.ayongbox</groupId>
+                <artifactId>baseon-starter-tenant</artifactId>
+                <version>${revision}</version>
+            </dependency>
 
             <!-- 新增 Starter 时在此追加，与仓库模块同步维护 -->
 

@@ -40,6 +40,31 @@
             <groupId>io.github.ayongbox</groupId>
             <artifactId>baseon-starter-loadbalance</artifactId>
         </dependency>
+        <!-- 4 期：动态数据源 + MP + Redis + 两级缓存 + 多租户 -->
+        <dependency>
+            <groupId>io.github.ayongbox</groupId>
+            <artifactId>baseon-starter-datasource</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.ayongbox</groupId>
+            <artifactId>baseon-starter-mybatis-plus</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.ayongbox</groupId>
+            <artifactId>baseon-starter-redis</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.ayongbox</groupId>
+            <artifactId>baseon-starter-cache</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.ayongbox</groupId>
+            <artifactId>baseon-starter-tenant</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
