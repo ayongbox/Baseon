@@ -5,6 +5,33 @@
 
 ---
 
+## [1.0.0-SNAPSHOT] · 4 期：数据与缓存（datasource + mybatis-plus + redis + cache + tenant）
+
+**日期**：2026-10-23
+
+### 新增能力
+
+- `baseon-starter-datasource`：动态数据源，`@DS` 注解显式切换；`@Transactional(readOnly=true)` 由 `ReadOnlyRouteAspect` 在事务开启前探测并轮询路由从库；Hikari 生产默认参数（20/5/3s/30min）。
+- `baseon-starter-mybatis-plus`：InnerInterceptor 链顺序固化（租户 → 分页）；逻辑删除与驼峰映射全局默认值（用户显式配置优先）；公共字段填充（createTime/updateTime/deleted/tenantId）；慢 SQL 拦截（默认阈值 1000ms，WARN 日志 + 可选 Micrometer 指标）。
+- 慢 SQL 拦截降噪改造：日志补 `tenantId` / `traceId` 归因信息；参数摘要按实体字段渲染（不再输出 `Object@hashCode`）；每个 statementId 前 3 次预热不判定；同一 statementId 的 WARN 限流 60s（指标仍逐次计数）；新增开关 `baseon.mybatis-plus.slow-sql-enabled`，关闭时拦截器不进入插件链。
+- `baseon-starter-redis`：key 规范校验（白名单字符、禁止连续冒号等，strict 模式抛异常）；`RedisLock` 分布式锁（SET NX EX + Lua compare-and-del 防误删）；`redisTemplate` 统一 String key + JSON value 序列化。
+- `baseon-starter-cache`：`CacheHelper` 两级缓存（L1 Caffeine + L2 Redis）；空值标记防穿透、回源互斥锁防击穿、TTL 随机抖动防雪崩；`CacheKeyPrefixProvider` SPI 支持 key 前缀。
+- `baseon-starter-tenant`：`TenantLineHandler` 读登录上下文 tenantId 自动过滤 SQL（无租户上下文时兜底 -1 查不到数据，strict 模式抛异常）；`@IgnoreTenant` 跨租户放行；缓存 key 自动追加 `t<tenantId>:` 前缀实现缓存租户隔离；`@IgnoreTenantCache` 关闭前缀。
+- 租户忽略新增编程式 API：core 的 `TenantIgnoreContext` 提供 `callSqlIgnored` / `runCacheIgnored` 等代码块级入口（嵌套安全，call/run 前缀区分函数形态避免 lambda 歧义）；starter-tenant 新增 `TenantOps.callWithSqlIgnored`，与注解切面同一套双保险，覆盖定时任务、消息消费等非 Web 场景。
+- 文档补充：cache 手册新增「扩展方向：binlog 自动失效」章节（目标架构、与现有组件衔接点、适用边界）；tenant 手册新增「编程式忽略」与「复杂 SQL 与手动租户条件」两节。
+- `core` 新增：`annotation.IgnoreTenant` / `IgnoreTenantCache`、`context.TenantIgnoreContext`、`spi.CacheKeyPrefixProvider`。
+- 83 个新单元测试（datasource 19 + mybatis-plus 19 + redis 20 + cache 7 + tenant 13 + core 5）。
+
+### 注意事项
+
+1. **MP 3.5.9 构件拆分**：`PaginationInnerInterceptor` 等已移至 `mybatis-plus-jsqlparser`，仅引 starter 会编译失败（P-010）。
+2. **读写分离的探测时机**：`AbstractRoutingDataSource` 在事务内读不到 `readOnly` 标记，必须靠前置 AOP；嵌套事务不做切换（P-011）。
+3. **缓存一致性边界**：L1 本地缓存不做失效广播，靠短 TTL（默认 30s）收敛；写后立刻强一致读取的场景请显式 `evict`。
+4. **@DS 必须在事务边界外**：事务开启后连接已绑定，方法内切换数据源无效。
+5. **demo 的 logging 已收窄至 demo 包**：`io.github.ayongbox.baseon.demo: debug` 保留 mapper SQL 逐条输出（学习用），框架 starter 包恢复 INFO；业务工程切勿照搬 `io.github.ayongbox: debug` 通配到生产，SQL 参数值逐条打印会打爆日志且可能泄露敏感数据。
+
+---
+
 ## [1.0.0-SNAPSHOT] · 3 期：微服务三件套（cloud-nacos + cloud-feign + loadbalance）
 
 **日期**：2026-10-23
