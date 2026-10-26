@@ -9,6 +9,33 @@ spring:
       server-addr: localhost:8848
       username: nacos
       password: nacos
+    # 5 期：Sentinel 流控规则走 Nacos 持久化，改规则不重启即生效
+    sentinel:
+      # 关闭懒加载，启动即初始化 Sentinel 相关 Bean，避免首个请求才加载导致规则空窗
+      eager: true
+      datasource:
+        flow:
+          nacos:
+            # 地址与账号复用上面的 nacos 配置
+            server-addr: ${spring.cloud.nacos.server-addr}
+            username: ${spring.cloud.nacos.username}
+            password: ${spring.cloud.nacos.password}
+            # dataId 命名约定：{应用名}-sentinel-{规则类型}-rules，groupId 统一 SENTINEL_GROUP
+            dataId: ${spring.application.name}-sentinel-flow-rules
+            groupId: SENTINEL_GROUP
+            data-type: json
+            rule-type: flow
+        # 租户维度热点参数限流规则（TenantHotParamGuard 演示用），同样走 Nacos 持久化。
+        # 注意：datasource 的 key 绑定到 Map 时连字符会被剥离，key 必须用纯字母数字
+        paramflow:
+          nacos:
+            server-addr: ${spring.cloud.nacos.server-addr}
+            username: ${spring.cloud.nacos.username}
+            password: ${spring.cloud.nacos.password}
+            dataId: ${spring.application.name}-sentinel-param-flow-rules
+            groupId: SENTINEL_GROUP
+            data-type: json
+            rule-type: param-flow
   # 配置中心：optional 前缀表示配置不存在也能启动；dataId 默认 DEFAULT_GROUP
   config:
     import:
@@ -19,8 +46,13 @@ spring:
       host: 127.0.0.1
       port: 6379
 
-# 4 期：动态数据源，本地用同实例两个 schema 模拟主从
 baseon:
+  # 5 期：JWT 鉴权。下面是本地开发用演示密钥（ASCII，≥32 字节，启动硬性校验）。
+  # 警告：仅用于本地跑通流程！生产环境必须通过环境变量 / KMS 注入真实密钥，
+  # 禁止把生产密钥写进代码库，也禁止照搬本值。
+  auth:
+    secret: baseon-demo-local-dev-secret-do-not-use-in-prod
+  # 4 期：动态数据源，本地用同实例两个 schema 模拟主从
   datasource:
     master:
       url: jdbc:mysql://127.0.0.1:3306/baseon_master?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
@@ -30,6 +62,20 @@ baseon:
       - url: jdbc:mysql://127.0.0.1:3306/baseon_slave?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
         username: root
         password: root
+
+# 5 期：熔断器 demoB 规则（resilience4j 原生配置）。
+# 参数故意调小便于本地快速演示熔断：5 次调用内失败率 ≥50% 即打开，
+# 打开 10s 后进入半开，半开期间放行 2 次探测调用；生产应按下游容量调大窗口与阈值。
+resilience4j:
+  circuitbreaker:
+    instances:
+      demoB:
+        sliding-window-size: 5
+        # 熔断判定生效的最小调用数，默认 100 对 demo 太钝，调到与窗口一致便于快速演示
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 2
 
 logging:
   level:

@@ -22,7 +22,7 @@ docs/
 | 2 期 | starter-web（异常、Jackson、上下文、日志、CORS）+ starter-trace（TraceId、MDC、异步透传） | ✅ 完成 |
 | 3 期 | starter-cloud-nacos + starter-cloud-feign + starter-loadbalance（注册发现、上下文透传、灰度路由） | ✅ 完成（`0d7426c`） |
 | 4 期 | starter-datasource + starter-mybatis-plus + starter-redis + starter-cache + starter-tenant | ✅ 完成（`4b230e6`，155 个单测全绿） |
-| 5 期 | starter-auth / xss / sentinel / resilience / idempotent | ⬜ 待启动 |
+| 5 期 | starter-auth / xss / sentinel / resilience / idempotent | ✅ 完成（208 个单测全绿，鉴权/限流/幂等/熔断闭环已联调验证） |
 
 ## 能力矩阵
 
@@ -35,8 +35,8 @@ docs/
 | `baseon-core` · context | `SecurityUtil`、`ContextWrapper`、`GrayContext`、`TenantIgnoreContext`（编程式 API） | ✅ 可用 |
 | `baseon-core` · cloud | `CloudHeaders`（灰度/链路 Header 常量） | ✅ 可用 |
 | `baseon-core` · spi | `CacheKeyPrefixProvider` | ✅ 可用（按需扩展） |
-| `baseon-core` · annotation | `@IgnoreTenant`、`@IgnoreTenantCache` | ✅ 可用 |
-| `baseon-core` · boot/db/secure/launch | 对应抽象契约 | ⬜ 未实现 |
+| `baseon-core` · annotation | `@IgnoreTenant`、`@IgnoreTenantCache`、`@RequiresPermission`、`@Idempotent`、`@Degrade` | ✅ 可用 |
+| `baseon-core` · secure | `AuthProvider`、`PermissionChecker`、`CryptoService`、`SensitiveType` 契约 | ✅ 可用（boot/db/launch 按需后补） |
 | `baseon-starter-web` | 全局异常、Jackson 统一、用户上下文、请求日志脱敏、CORS | ✅ 可用 |
 | `baseon-starter-trace` | TraceId、MDC、线程池/异步/定时任务透传、统一 logback 配置 | ✅ 可用 |
 | `baseon-starter-cloud-nacos` | 三档注册策略、ConfigHolder 免 @RefreshScope、Jasypt 加密 | ✅ 可用 |
@@ -47,6 +47,11 @@ docs/
 | `baseon-starter-redis` | key 规范校验、`RedisLock` 分布式锁、统一序列化 | ✅ 可用 |
 | `baseon-starter-cache` | L1 Caffeine + L2 Redis 两级缓存、三害防护、租户前缀 SPI | ✅ 可用 |
 | `baseon-starter-tenant` | 行级 SQL 过滤、缓存租户前缀、`@IgnoreTenant`/`@IgnoreTenantCache`、`TenantOps` 编程式 API | ✅ 可用 |
+| `baseon-starter-auth` | JWT 双 Token 签发/刷新/吊销（Redis 黑名单）、`@RequiresPermission` 方法级鉴权、AuthProvider 可整体替换 | ✅ 可用 |
+| `baseon-starter-xss` | 表单/请求头/JSON 全链路 HTML 转义、exclude-paths 例外通道 | ✅ 可用 |
+| `baseon-starter-sentinel` | BlockException 统一映射（429/1005、503/9003）、租户热点参数限流、规则 Nacos 持久化 | ✅ 可用 |
+| `baseon-starter-resilience` | `@Degrade` 三策略兜底（CACHE/DEFAULT/FAIL_FAST）、熔断状态告警 SPI、复用 resilience4j 原生熔断/舱壁 | ✅ 可用 |
+| `baseon-starter-idempotent` | `@Idempotent` + Redis 原子占位、key 三级来源（SpEL/请求头/方法级）、租户前缀联动 | ✅ 可用 |
 
 ## 文档维护约定
 

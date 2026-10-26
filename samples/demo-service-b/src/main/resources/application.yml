@@ -9,6 +9,11 @@ spring:
       server-addr: localhost:8848
       username: nacos
       password: nacos
+      discovery:
+        # 本地联调固定注册回环地址：多网卡环境下 Nacos 默认选取的局域网 IP
+        # 可能随网络切换失效，导致调用方拿到不可达地址（502/超时）。
+        # 仅本地验证使用，生产部署必须删除本段，让框架自动选路。
+        ip: 127.0.0.1
   # nacos starter 含配置中心能力，optional 前缀表示配置不存在也能启动
   config:
     import:

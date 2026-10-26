@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>io.github.ayongbox</groupId>
+        <artifactId>baseon-parent</artifactId>
+        <version>${revision}</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>baseon-starter-resilience</artifactId>
+    <packaging>jar</packaging>
+
+    <name>baseon-starter-resilience</name>
+    <description>调用韧性：resilience4j 熔断/舱壁开箱组合 + 自研 @Degrade 降级取值兜底（缓存/默认值/快速失败）+ 熔断状态告警</description>
+
+    <dependencies>
+        <!-- core 经 cloud-feign 传递引入；@Degrade 标注在远程调用方法上，故依赖 Feign 治理能力 -->
+        <dependency>
+            <groupId>io.github.ayongbox</groupId>
+            <artifactId>baseon-starter-cloud-feign</artifactId>
+        </dependency>
+
+        <!-- 熔断/舱壁注解能力由 resilience4j 自身自动配置提供，本 starter 不重封装 -->
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-spring-boot3</artifactId>
+        </dependency>
+
+        <!-- @Degrade(CACHE) 策略的本地结果缓存 -->
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aop</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</project>

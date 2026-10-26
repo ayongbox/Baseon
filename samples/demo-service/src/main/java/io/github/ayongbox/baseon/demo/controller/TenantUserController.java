@@ -1,6 +1,8 @@
 package io.github.ayongbox.baseon.demo.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import io.github.ayongbox.baseon.core.annotation.Idempotent;
+import io.github.ayongbox.baseon.core.annotation.RequiresPermission;
 import io.github.ayongbox.baseon.core.model.R;
 import io.github.ayongbox.baseon.demo.entity.TenantUser;
 import io.github.ayongbox.baseon.demo.service.TenantUserService;
@@ -28,12 +30,16 @@ public class TenantUserController {
         this.service = service;
     }
 
+    /** 创建：同名占位窗口内重复提交被幂等拦截；需 user:create 权限 */
+    @Idempotent(key = "#name")
+    @RequiresPermission("user:create")
     @PostMapping
     public R<TenantUser> create(@RequestParam String name) {
         return R.ok(service.create(name));
     }
 
-    /** 当前租户数据列表（MP 自动追加 tenant_id 条件） */
+    /** 当前租户数据列表（MP 自动追加 tenant_id 条件）；需 user:list 权限 */
+    @RequiresPermission("user:list")
     @GetMapping
     public R<List<TenantUser>> list() {
         return R.ok(service.listCurrentTenant());

@@ -33,6 +33,11 @@ public class UserContextInterceptor implements HandlerInterceptor {
             return true;
         }
 
+        // starter-auth 的 AuthTokenFilter 已完成真实鉴权并写入上下文，信任模式不得覆盖
+        if (SecurityUtil.isLogin()) {
+            return true;
+        }
+
         String userId = request.getHeader(config.getUserIdHeader());
         String tenantId = request.getHeader(config.getTenantIdHeader());
         String username = request.getHeader(config.getUsernameHeader());

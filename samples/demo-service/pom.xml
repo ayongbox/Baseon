@@ -61,6 +61,27 @@
             <groupId>io.github.ayongbox</groupId>
             <artifactId>baseon-starter-tenant</artifactId>
         </dependency>
+        <!-- 5 期：鉴权 + XSS + 限流 + 韧性 + 幂等 -->
+        <dependency>
+            <groupId>io.github.ayongbox</groupId>
+            <artifactId>baseon-starter-auth</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.ayongbox</groupId>
+            <artifactId>baseon-starter-xss</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.ayongbox</groupId>
+            <artifactId>baseon-starter-sentinel</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.ayongbox</groupId>
+            <artifactId>baseon-starter-resilience</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.ayongbox</groupId>
+            <artifactId>baseon-starter-idempotent</artifactId>
+        </dependency>
         <dependency>
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>

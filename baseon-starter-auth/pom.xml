@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>io.github.ayongbox</groupId>
+        <artifactId>baseon-parent</artifactId>
+        <version>${revision}</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>baseon-starter-auth</artifactId>
+    <packaging>jar</packaging>
+
+    <name>baseon-starter-auth</name>
+    <description>JWT 鉴权：双 Token 签发/刷新、Redis 吊销与黑名单、@RequiresPermission 权限切面</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.github.ayongbox</groupId>
+            <artifactId>baseon-core</artifactId>
+        </dependency>
+
+        <!-- 登录上下文、统一返回体与全局异常处理由 starter-web 提供 -->
+        <dependency>
+            <groupId>io.github.ayongbox</groupId>
+            <artifactId>baseon-starter-web</artifactId>
+        </dependency>
+
+        <!-- 刷新凭证吊销与 access 黑名单基于 RedisUtil -->
+        <dependency>
+            <groupId>io.github.ayongbox</groupId>
+            <artifactId>baseon-starter-redis</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aop</artifactId>
+        </dependency>
+
+        <!-- jjwt：api 编译期，impl/jackson 运行期（版本由父 POM 锁定） -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</project>
