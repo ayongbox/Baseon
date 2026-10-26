@@ -22,6 +22,16 @@ public class BizException extends RuntimeException {
         this(errorCode.getCode(), message, errorCode.getType());
     }
 
+    /**
+     * 携带原始异常：供包装下游故障的场景使用（如降级包装远程调用异常），
+     * 仍关闭自身堆栈采集，排障信息由 cause 承担。
+     */
+    public BizException(ErrorCode errorCode, Throwable cause) {
+        super(errorCode.getMessage(), cause, false, false);
+        this.code = errorCode.getCode();
+        this.type = errorCode.getType();
+    }
+
     public BizException(int code, String message) {
         this(code, message, ErrorType.SERVER_ERROR);
     }

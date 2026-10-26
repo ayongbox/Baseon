@@ -19,7 +19,7 @@ class CoreArchitectureTest {
     @ArchTest
     static final ArchRule pure_kernel_should_not_depend_on_spring =
             noClasses()
-                    .that().resideInAnyPackage("..core.model..", "..core.tool..", "..core.context..")
+                    .that().resideInAnyPackage("..core.model..", "..core.tool..", "..core.context..", "..core.secure..")
                     .should().dependOnClassesThat().resideInAnyPackage("org.springframework..")
                     .because("内核必须零 Spring 依赖，容器能力全部下沉到 Starter 层");
 

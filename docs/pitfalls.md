@@ -134,3 +134,63 @@
 **解决**：`ReadOnlyRouteAspect` 以 `@Order(HIGHEST_PRECEDENCE)` 在事务拦截器之前执行，读 `@Transactional` 注解元数据，把只读标记写入 `DataSourceContextHolder`，路由数据源凭标记轮询从库。嵌套事务（synchronization 已激活）不切换——连接已由外层事务绑定。
 
 **规避**：任何「依赖事务属性做数据源路由」的方案都不能在 `determineCurrentLookupKey` 里读事务同步状态；同类库（dynamic-datasource）的处理口径是「事务内强制走主库」，与本期方案的差异在于读多写少场景的成本取舍。
+
+---
+
+## P-012 · Filter 抛出的异常到不了 @RestControllerAdvice
+
+**现象**：starter-auth 的 `AuthTokenFilter` 校验失败时抛 `BizException(CommonErrorCode.UNAUTHORIZED)`，客户端收到的不是统一 JSON，而是 Tomcat 默认 500 HTML 错误页。
+
+**根因**：`@RestControllerAdvice` 基于 `HandlerExceptionResolver`，只能处理 DispatcherServlet **分发之后**（拦截器、Controller）抛出的异常；Filter 处于 Servlet 容器层，异常不会进入 Spring MVC 的异常解析链。
+
+**解决**：Filter 内认证失败时自行写响应：`response.setStatus(401)` + `Content-Type: application/json;charset=UTF-8` + 用 ObjectMapper 序列化 `R.fail(...)` 写入 body。
+
+**规避**：凡是 Filter 层做的校验（鉴权、签名、防重放），失败响应必须自写 JSON；拦截器层（`HandlerInterceptor`）抛出的异常可以走 Advice，不用特殊处理。
+
+---
+
+## P-013 · Spring Boot 绑定 Map 配置时剥离 key 中的连字符
+
+**现象**：Sentinel 热点参数规则配在 `spring.cloud.sentinel.datasource.param-flow.nacos.*` 下，启动后规则不加载，普通 flow 规则却正常。
+
+**根因**：Spring Boot 的 relaxed binding 在把 yml 绑定到 `Map<String, ...>` 时会把 key 里的连字符剥掉（`param-flow` 实际绑定为 `paramflow`），而 SCA 按 `rule-type` 匹配 datasource key 用的是精确字符串，剥离后匹配失败、数据源静默不生效。普通类型绑定（绑定到 POJO 字段）不受影响，因为字段名与属性名之间有规范化映射。
+
+**解决**：datasource 的 Map key 必须用纯字母数字（如 `paramflow`），`rule-type: param-flow` 的值不受影响。
+
+**规避**：配置到 `Map<String, X>` 的 yml key 一律避免连字符；排查「配置了但没生效」类问题时，先怀疑 key 被规范化。
+
+---
+
+## P-014 · Nacos 3.x 移除了 v1 OpenAPI，脚本发布配置/登录要换 v3 路径
+
+**现象**：沿用 Nacos 2.x 的脚本 `POST /nacos/v1/cs/configs` 与 `POST /nacos/v3/auth/login` 发布规则均返回 404。
+
+**根因**：Nacos 3.x 服务端移除了 v1 OpenAPI；且登录接口的正确路径是 `POST /nacos/v3/auth/user/login`（不是 `/v3/auth/login`）。
+
+**解决**：登录用 `POST /nacos/v3/auth/user/login` 拿 `accessToken`，发布配置用 `POST /nacos/v3/admin/cs/config?accessToken=...`，group 参数名为 `groupName`。
+
+**规避**：对接 Nacos 3.x 的 OpenAPI 前先查官方 v3 文档，不要沿用 2.x 的路径记忆。
+
+---
+
+## P-015 · @Degrade 与 @CircuitBreaker 组合时，切面顺序决定熔断器能否看到失败
+
+**现象**：下游停服后 `@CircuitBreaker` 熔断器永远不打开，日志里全是真实异常（Connection refused）穿透，无任何 `CallNotPermittedException`，也没有熔断告警。
+
+**根因**：`DegradeAspect` 未声明 `@Order` 时默认 `LOWEST_PRECEDENCE`（最内层，最贴近方法），而 resilience4j-spring6 2.2.x 的 `CircuitBreakerAspect` 默认 order 是 `LOWEST_PRECEDENCE - 4`（字节码确认，**不是** 一些资料写的 -1）。Spring AOP 中 order 值小者为外层，于是熔断器在外、降级在内——CACHE 策略把异常吞掉返回缓存值，熔断器看到的是「成功」，永远不计数。
+
+**解决**：`DegradeAspect` 声明 `@Order(Ordered.LOWEST_PRECEDENCE - 5)`，比熔断器小 1、稳处其外层：真实异常先经熔断器计数再被降级兜底；OPEN 后熔断器抛 `CallNotPermittedException` 同样由降级切面兜底返回缓存。
+
+**规避**：自研切面与第三方库切面组合时，必须查目标库 aspect 的**字节码/源码级**真实 order（库文档经常过时），并在 javadoc 写明顺序约定；若业务通过 `circuitBreakerAspectOrder` 自定义了熔断器顺序，需同步审视本值。
+
+---
+
+## P-016 · Maven jar 插件不感知依赖 jar 更新，子模块改动后 demo 包需 clean package
+
+**现象**：`baseon-starter-resilience` 修复后执行了 `mvn -pl baseon-starter-resilience install`（本地仓库 jar 已是新版），随后 `mvn -pl samples/demo-service package` 显示 BUILD SUCCESS，但打出的 fat jar 里仍然是**旧版** starter——类上没有新加的注解。
+
+**根因**：maven-jar-plugin 的增量检查只看 `target/classes` 时间戳，不检查依赖 jar 是否更新；`BOOT-INF/lib` 里收编的是构建会话解析时的快照。只 package 不 clean 时旧 jar 原样保留。
+
+**解决**：改了 starter 类代码后要重打 demo 包，用 `mvn -pl samples/demo-service clean package`；或先 `mvn install` 全量再 package。
+
+**规避**：「install 了 starter 但 demo 行为没变」是本类问题的典型信号，验证手段：解压 fat jar 后 `javap -v` 目标类确认注解/常量值，或比对 `BOOT-INF/lib` 中 jar 的 MD5 与本地仓库是否一致。

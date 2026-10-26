@@ -37,6 +37,15 @@ public class RedisUtil {
         redisTemplate.opsForValue().set(completeKey(key), value, ttlSeconds, TimeUnit.SECONDS);
     }
 
+    /**
+     * 原子占位：key 不存在时写入并返回 true，已存在时不覆盖并返回 false。
+     * 幂等控制、一次性令牌等「先到先得」场景使用。
+     */
+    public Boolean setIfAbsent(String key, String value, long ttlSeconds) {
+        return redisTemplate.opsForValue()
+                .setIfAbsent(completeKey(key), value, ttlSeconds, TimeUnit.SECONDS);
+    }
+
     public Boolean delete(String key) {
         return redisTemplate.delete(completeKey(key));
     }

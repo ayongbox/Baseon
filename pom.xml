@@ -25,6 +25,11 @@
         <module>baseon-starter-redis</module>
         <module>baseon-starter-cache</module>
         <module>baseon-starter-tenant</module>
+        <module>baseon-starter-auth</module>
+        <module>baseon-starter-xss</module>
+        <module>baseon-starter-idempotent</module>
+        <module>baseon-starter-sentinel</module>
+        <module>baseon-starter-resilience</module>
         <module>samples/demo-service</module>
         <module>samples/demo-service-b</module>
     </modules>
@@ -45,6 +50,9 @@
         <mybatis-plus.version>3.5.9</mybatis-plus.version>
         <caffeine.version>3.1.8</caffeine.version>
         <mysql-connector.version>8.4.0</mysql-connector.version>
+        <!-- 5 期新增：JWT 与熔断降级（sentinel 由 SCA BOM 管理，无需在此锁定） -->
+        <jjwt.version>0.12.6</jjwt.version>
+        <resilience4j.version>2.2.0</resilience4j.version>
 
         <flatten-maven-plugin.version>1.6.0</flatten-maven-plugin.version>
         <maven-enforcer-plugin.version>3.4.1</maven-enforcer-plugin.version>
@@ -139,6 +147,31 @@
                 <artifactId>baseon-starter-tenant</artifactId>
                 <version>${revision}</version>
             </dependency>
+            <dependency>
+                <groupId>io.github.ayongbox</groupId>
+                <artifactId>baseon-starter-auth</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.ayongbox</groupId>
+                <artifactId>baseon-starter-xss</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.ayongbox</groupId>
+                <artifactId>baseon-starter-idempotent</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.ayongbox</groupId>
+                <artifactId>baseon-starter-sentinel</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.ayongbox</groupId>
+                <artifactId>baseon-starter-resilience</artifactId>
+                <version>${revision}</version>
+            </dependency>
 
             <!-- 4 期新增第三方：MP 适配 Boot3 坐标独立于旧版 mybatis-plus-boot-starter -->
             <dependency>
@@ -165,6 +198,29 @@
                 <groupId>com.mysql</groupId>
                 <artifactId>mysql-connector-j</artifactId>
                 <version>${mysql-connector.version}</version>
+            </dependency>
+
+            <!-- 5 期新增第三方：jjwt 三件套（api 编译期，impl/jackson 运行期） -->
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-api</artifactId>
+                <version>${jjwt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-impl</artifactId>
+                <version>${jjwt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-jackson</artifactId>
+                <version>${jjwt.version}</version>
+            </dependency>
+            <!-- resilience4j 的 Boot3 装配入口，注解式熔断/舱壁 -->
+            <dependency>
+                <groupId>io.github.resilience4j</groupId>
+                <artifactId>resilience4j-spring-boot3</artifactId>
+                <version>${resilience4j.version}</version>
             </dependency>
 
             <!-- 构建期工具，仅 test scope 使用 -->

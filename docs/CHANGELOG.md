@@ -5,6 +5,41 @@
 
 ---
 
+## [1.0.0-SNAPSHOT] · 5 期：安全与韧性（auth + xss + sentinel + resilience + idempotent）
+
+**日期**：2026-10-24
+
+### 新增能力
+
+- `baseon-starter-auth`：JWT 双 Token（access + refresh）签发/校验/刷新/吊销；`AuthTokenFilter` 验签后写登录上下文；`@RequiresPermission` 方法级鉴权（未登录 1002/401，权限不足 1003/403）；refresh 会话与 access 黑名单托管 Redis，支持登出吊销。
+- `baseon-starter-xss`：`XssFilter` 包装请求，对 query/form 参数与请求头做 HTML 转义；`XssStringDeserializer` 在 JSON 反序列化阶段转义字符串字段；`baseon.xss.exclude-paths` 为富文本等场景留例外通道。
+- `baseon-starter-sentinel`：`BlockException` 统一异常映射（限流 429/1005，熔断降级 503/9003）；`TenantHotParamGuard` 租户维度热点参数限流（热点参数 = 当前租户 ID，无上下文兜底 -1）；规则 Nacos 持久化走 SCA 原生 `spring.cloud.sentinel.datasource.*`。
+- `baseon-starter-resilience`：`@Degrade` 三策略取值兜底（CACHE / DEFAULT / FAIL_FAST）；Caffeine 降级结果缓存（容量上限 + 写入过期）；熔断状态变更告警 `AlarmHook` SPI；熔断/舱壁直接复用 resilience4j 原生 `@CircuitBreaker` / `@Bulkhead`。
+- `baseon-starter-idempotent`：`@Idempotent` 注解 + Redis `SET NX EX` 原子占位防重复提交；幂等 key 三级来源（SpEL 表达式 → 请求头令牌 → 方法级兜底）；引入 starter-tenant 后 key 自动带租户前缀。
+- `core` 新增 `secure` 包契约（`AuthProvider` / `PermissionChecker`），业务声明自己的 `AuthProvider` Bean 即可整体替换认证体系（SSO/OAuth2），默认 `TokenService` 退避。
+- `LoginUser` 新增 `permissions` 字段：权限串随 Token claims 携带，`@RequiresPermission` 切面据此比对。
+- `RedisUtil` 新增 `setIfAbsent`（SET NX EX 原子语义），幂等占位与分布式锁共用。
+- `starter-web` 拦截器协调改动：`UserContextInterceptor` 发现 `SecurityUtil.isLogin()` 时跳过 Header 覆盖，`AuthTokenFilter` 先于其执行，认证上下文不会被伪造 Header 顶掉，两种信任模式幂等共存。
+- `samples/demo-service` 接线 5 个 starter：`/auth/login|refresh|logout|me`、`/demo/sentinel/qps|tenant-qps`、`/demo/resilience/call-b`（熔断 + CACHE 降级）、`/demo/xss/echo|echo-json`，租户用户接口加权限与幂等注解。
+- 53 个新单元测试（auth 18 + xss 7 + sentinel 8 + resilience 9 + idempotent 7 + core 4），全量 208 个测试全绿。
+- 联调验证：鉴权（登录/权限/刷新/吊销）、Sentinel 限流（资源 QPS + 租户热点）、幂等（重复提交 1006/409）、XSS（表单/JSON 转义）、熔断降级完整闭环（CLOSED→OPEN 告警 → CallNotPermitted 快速失败 + CACHE 兜底 → 10s 半开 → 探测成功 → CLOSED 告警）均通过。
+
+### 注意事项
+
+1. **Filter 层异常到不了 `@RestControllerAdvice`**：`AuthTokenFilter` 在 DispatcherServlet 之前执行，认证失败不经过 `GlobalExceptionHandler`，必须在 Filter 内自写 401 JSON（格式固定为 `{"code":1002,"msg":...}`，与全局返回体一致）；同理 `BlockException` 不是 `BizException`，需 starter-sentinel 的 Advice 接管，业务自定义 Filter/底层组件时不要再指望全局异常处理器兜底（P-012）。
+2. **auth secret 是安全配置**：不足 32 字节启动直接失败（HS256 硬性要求）；demo 中的明文密钥仅本地演示，生产必须走环境变量或 KMS 注入，禁止照搬提交。
+3. **Redis 是吊销状态的唯一载体**：refresh 会话与 access 黑名单都依赖 Redis，Redis 不可用等同于「登出/吊销不生效」，需纳入监控。
+4. **XSS 转义与富文本冲突**：编辑器提交的 HTML 会被无差别转义成实体，此类接口必须加入 `baseon.xss.exclude-paths` 并由业务自行做白名单过滤；转义后入库的数据不可还原原文。
+5. **@Degrade 依赖 AOP 代理**：同类自调用降级不生效；CACHE 策略是多实例独立的本地缓存，不保证跨节点一致，接口契约上需让调用方知晓可能拿到兜底值。
+6. **幂等占位失败不删 key**：窗口（默认 10s）内只放行一次，失败重试与恶意重复提交无法区分；需要「失败立即放行重试」语义的接口不要标 `@Idempotent`。
+7. **ignore-paths / 热点规则索引**：登录与刷新接口必须在 `baseon.auth.ignore-paths` 内（默认已含）；`TenantHotParamGuard` 的热点参数索引固定为 0，配 `ParamFlowRule` 时 `paramIdx` 必须为 0，否则规则不命中。
+8. **Sentinel datasource 的 Map key 不能带连字符**：Spring Boot 绑定 `Map` 配置时会剥离 key 中的连字符（`param-flow` → `paramflow`），导致数据源静默不生效；yml key 用纯字母数字，`rule-type` 的值不受影响（P-013）。
+9. **Nacos 3.x OpenAPI 路径变更**：v1 接口已移除，脚本发布配置/登录用 `POST /nacos/v3/auth/user/login` 与 `POST /nacos/v3/admin/cs/config?accessToken=...`（group 参数名 `groupName`，P-014）。
+10. **@Degrade 与 @CircuitBreaker 组合的切面顺序**：resilience4j-spring6 2.2.x 熔断器切面默认 order 为 `LOWEST_PRECEDENCE - 4`（字节码确认）；`DegradeAspect` 固定 `LOWEST_PRECEDENCE - 5` 稳处其外层，否则兜底返回值被熔断器误判为成功、熔断永不打开（P-015）。业务自定义 `circuitBreakerAspectOrder` 时必须大于该值。
+11. **starter 改动后重打 demo 包需 clean package**：Maven jar 插件不感知依赖 jar 更新，仅 package 会把旧版 starter 打进 fat jar（P-016）。
+
+---
+
 ## [1.0.0-SNAPSHOT] · 4 期：数据与缓存（datasource + mybatis-plus + redis + cache + tenant）
 
 **日期**：2026-10-23

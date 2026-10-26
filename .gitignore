@@ -9,3 +9,4 @@ target/
 .DS_Store
 落地模块清单.md
 通用SpringCloud企业微服务脚手架.md
+.trae/
