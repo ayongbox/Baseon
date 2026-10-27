@@ -17,6 +17,9 @@ import java.io.IOException;
  *
  * <p>执行顺序在 Spring Security 之前，确保后续所有日志（包括认证失败日志）都带 traceId。
  * 与 {@code UserContextInterceptor} 的分工：本 Filter 只管 traceId，用户上下文由后者负责。
+ *
+ * <p>本类仅在 classpath 无 micrometer-tracing 时装配；引入 baseon-starter-tracing-otel
+ * 后由 {@link TracerAwareTraceIdFilter} 接替，避免双 traceId 并存。
  */
 public class TraceIdFilter extends OncePerRequestFilter {
 

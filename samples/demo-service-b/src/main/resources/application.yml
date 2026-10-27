@@ -19,8 +19,20 @@ spring:
     import:
       - optional:nacos:demo-service-b.yaml
 
+# 7.5 期：OTel 分布式追踪，配置与 demo-service 对齐（本地无 collector，用日志导出档验证）
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      enabled: false
+
 # 7 期：网关聚合文档——本服务只保留 /v3/api-docs 端点供网关拉取，UI 收敛到网关（8090）
 baseon:
+  tracing:
+    otel:
+      log-exporter-enabled: true
   swagger:
     title: Demo Service B API
     description: 下游演示服务接口文档（经网关聚合展示）

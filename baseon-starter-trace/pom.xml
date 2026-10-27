@@ -39,6 +39,14 @@
             <artifactId>aspectjweaver</artifactId>
         </dependency>
 
+        <!-- 可选协同：引入 baseon-starter-tracing-otel（或任何 micrometer-tracing 桥接）时，
+             TraceIdFilter 借此复用全链路 traceId；不引入则保持自有 ID 行为，运行期无需该类 -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-tracing</artifactId>
+            <optional>true</optional>
+        </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-configuration-processor</artifactId>

@@ -95,6 +95,11 @@
             <groupId>io.github.ayongbox</groupId>
             <artifactId>baseon-starter-log</artifactId>
         </dependency>
+        <!-- 7.5 期：OTel 分布式追踪接入，与 starter-trace 协同统一 traceId -->
+        <dependency>
+            <groupId>io.github.ayongbox</groupId>
+            <artifactId>baseon-starter-tracing-otel</artifactId>
+        </dependency>
         <dependency>
             <groupId>io.github.ayongbox</groupId>
             <artifactId>baseon-starter-debug-tools</artifactId>

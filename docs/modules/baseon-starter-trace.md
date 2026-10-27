@@ -93,8 +93,18 @@ if (traceId != null) {
 2. **MDC 清理必须成对**：`TraceIdFilter` 和 `ScheduledTraceAspect` 都在 finally 中清理，业务代码不得自行 `MDC.clear()`，否则会导致后续日志丢失 traceId。
 3. **线程池必须被 Spring 管理**：只有 `ThreadPoolTaskExecutor` Bean 会被自动装饰；手写 `new ThreadPoolExecutor()` 不会生效，需手动 `MdcTaskDecorator` 包装。
 4. **@Async 的局限**：Spring 的 `AsyncConfigurer` 不支持 `TaskDecorator`，`@Async` 的 MDC 透传依赖其底层 executor 是 `ThreadPoolTaskExecutor` Bean。
-5. **Feign/HTTP 客户端透传**：当前版本未实现，需要额外在 Feign 拦截器或 RestTemplate 拦截器中读取 `TraceIdUtil.get()` 并写入请求头。
+5. **Feign 透传在 starter-cloud-feign**：`ContextPropagateRequestInterceptor` 自动把 `TraceIdUtil.get()` 写入下游 `X-Trace-Id` 头，本模块自身不含 HTTP 客户端透传。
 6. **MQ 消息透传**：当前版本未实现，需要 Producer 发送时写入消息头、Consumer 消费时写入 MDC。
+
+## 与 Micrometer Tracing / OpenTelemetry 协同（8 期起）
+
+引入 `baseon-starter-tracing-otel`（或任意 micrometer-tracing 桥接依赖）后，本模块自动切换为「复用模式」，无需任何配置：
+
+- **过滤器二选一**：classpath 无 `io.micrometer.tracing.Tracer` 时装配 `TraceIdFilter`（自有 ID 生成/继承，行为不变）；有时装配 `TracerAwareTraceIdFilter`——Boot 的 `ServerHttpObservationFilter` 顺序为 `HIGHEST_PRECEDENCE + 1` 必先执行，故直接复用 `tracer.currentSpan()` 的 traceId，**不再自生成**，避免日志 ID 与追踪后端 ID 分叉。
+- **MDC 生命周期让位**：复用路径下 MDC 的 `traceId`/`spanId` 由 micrometer 的 scope 管理（关闭时恢复），本过滤器幂等写入同 key 后不清理；logback pattern 的 `%X{traceId:-}` 与 micrometer 默认 MDC key 同名，日志格式零改动即输出 OTel traceId（32 位十六进制，与自有 UUID 去横线格式同构）。
+- **回退路径**：无当前 span（`management.tracing.enabled=false`、Tracer 为 NOOP）时自动回退自有 ID 逻辑，行为与未引入 OTel 完全一致。
+- **透传链不变**：Feign 自定义头 `X-Trace-Id` 仍由 starter-cloud-feign 透传（此时值已是 OTel traceId），下游未接 OTel 的老服务照常继承同一 ID；接入 OTel 的下游走 W3C `traceparent` 续链（P-022）。
+- **类加载安全**：`TraceIdFilter` 签名不引用 Tracer，Tracer 相关装配隔离在 `@ConditionalOnClass` 嵌套配置中，未引入 OTel 的工程运行期无需 micrometer 类。
 
 ## 内置统一 logback 配置
 
