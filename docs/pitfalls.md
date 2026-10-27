@@ -194,3 +194,29 @@
 **解决**：改了 starter 类代码后要重打 demo 包，用 `mvn -pl samples/demo-service clean package`；或先 `mvn install` 全量再 package。
 
 **规避**：「install 了 starter 但 demo 行为没变」是本类问题的典型信号，验证手段：解压 fat jar 后 `javap -v` 目标类确认注解/常量值，或比对 `BOOT-INF/lib` 中 jar 的 MD5 与本地仓库是否一致。
+
+**补充（6 期）**：reactor 全量 `clean install` 打出的 demo fat jar 偶发连 `BOOT-INF/classes/application.yml` 都缺失（plain jar 只有 class 没有资源），启动报 `No spring.config.import property has been defined`——同样是打包阶段不确定性，对 demo 模块单独再跑一次 `clean package` 即可恢复。
+
+---
+
+## P-017 · 测试篡改 JWT 签名时勿改末字符：Base64URL 填充位会让篡改失效
+
+**现象**：`tamperedSignatureThrowsUnauthorized` 测试偶发失败（改过的 token 仍验签通过），同一份代码前一次构建全绿、后一次报 "Expecting code to raise a throwable"。
+
+**根因**：HS256 签名 32 字节，Base64URL 编码后**末字符只含 4bit 有效数据、低 2bit 是填充位**。测试把末字符 `A`(000000) 改成 `B`(000001) 时，变化的 bit 恰好落在填充位上，解码出的 32 字节签名分毫未变，验签自然通过。只有签名末字符恰好是 A/B 时才触发，表现为概率性失败。
+
+**解决**：篡改点改为**倒数第二个字符**（6bit 全是有效数据，改动必然破坏签名）。
+
+**规避**：手写 Base64/Base64URL 篡改测试时，永远改非末尾字符；或干脆改 payload 段（payload 变了签名必然不匹配）。凡是「改一个字符预期失败」的测试，都要想一层编码填充位。
+
+---
+
+## P-018 · fastexcel 与 feign-form-spring 传递的 commons-io 版本分歧触发 dependencyConvergence
+
+**现象**：引入 `baseon-starter-excel` 后 demo-service 构建被 enforcer 拦下：`Dependency convergence error for commons-io:commons-io`——feign-form-spring 传 2.11.0，fastexcel 传 2.16.1。
+
+**根因**：父 POM 开启了 `dependencyConvergence` 规则，同构件全工程只允许一个版本；两个第三方各自传递了不同版本。
+
+**解决**：父 POM dependencyManagement 显式锁定 commons-io 2.16.1（高版本，向后兼容性好，对 feign-form-spring 无影响）。
+
+**规避**：新增第三方依赖后第一时间跑一次全量构建让 enforcer 暴露收敛问题；锁版本时优先锁高版本并注释说明来源分歧， commons-io/commons-lang3 这类工具库高版本覆盖低版本通常安全，但锁完要跑相关模块测试确认。

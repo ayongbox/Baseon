@@ -57,9 +57,12 @@ class JwtTokenProviderTest {
     @Test
     void tamperedSignatureThrowsUnauthorized() {
         String token = provider.createAccessToken(demoUser(), "session-1");
-        // 篡改签名段的最后一个字符，payload 不动
-        char replacement = token.endsWith("A") ? 'B' : 'A';
-        String tampered = token.substring(0, token.length() - 1) + replacement;
+        // 篡改签名段倒数第二个字符：Base64URL 末字符含 2bit 填充位，
+        // 改末字符可能不改变解码后的字节（签名仍合法，测试偶发不失败），
+        // 倒数第二个字符的 6bit 全部是有效数据，改动必然破坏签名
+        int pos = token.length() - 2;
+        char replacement = token.charAt(pos) == 'A' ? 'B' : 'A';
+        String tampered = token.substring(0, pos) + replacement + token.substring(pos + 1);
 
         assertThatThrownBy(() -> provider.parse(tampered))
                 .isInstanceOfSatisfying(BizException.class, e ->

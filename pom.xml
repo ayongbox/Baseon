@@ -30,6 +30,10 @@
         <module>baseon-starter-idempotent</module>
         <module>baseon-starter-sentinel</module>
         <module>baseon-starter-resilience</module>
+        <module>baseon-starter-excel</module>
+        <module>baseon-starter-swagger</module>
+        <module>baseon-starter-log</module>
+        <module>baseon-starter-debug-tools</module>
         <module>samples/demo-service</module>
         <module>samples/demo-service-b</module>
     </modules>
@@ -53,6 +57,9 @@
         <!-- 5 期新增：JWT 与熔断降级（sentinel 由 SCA BOM 管理，无需在此锁定） -->
         <jjwt.version>0.12.6</jjwt.version>
         <resilience4j.version>2.2.0</resilience4j.version>
+        <!-- 6 期新增：FastExcel（EasyExcel 停更后的社区续作，Apache 2.0）与 springdoc OpenAPI -->
+        <fastexcel.version>1.2.0</fastexcel.version>
+        <springdoc.version>2.5.0</springdoc.version>
 
         <flatten-maven-plugin.version>1.6.0</flatten-maven-plugin.version>
         <maven-enforcer-plugin.version>3.4.1</maven-enforcer-plugin.version>
@@ -172,6 +179,26 @@
                 <artifactId>baseon-starter-resilience</artifactId>
                 <version>${revision}</version>
             </dependency>
+            <dependency>
+                <groupId>io.github.ayongbox</groupId>
+                <artifactId>baseon-starter-excel</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.ayongbox</groupId>
+                <artifactId>baseon-starter-swagger</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.ayongbox</groupId>
+                <artifactId>baseon-starter-log</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.ayongbox</groupId>
+                <artifactId>baseon-starter-debug-tools</artifactId>
+                <version>${revision}</version>
+            </dependency>
 
             <!-- 4 期新增第三方：MP 适配 Boot3 坐标独立于旧版 mybatis-plus-boot-starter -->
             <dependency>
@@ -221,6 +248,27 @@
                 <groupId>io.github.resilience4j</groupId>
                 <artifactId>resilience4j-spring-boot3</artifactId>
                 <version>${resilience4j.version}</version>
+            </dependency>
+            <!-- 6 期新增第三方：FastExcel 注解式流式读写，poi-ooxml 由其传递引入 -->
+            <dependency>
+                <groupId>cn.idev.excel</groupId>
+                <artifactId>fastexcel</artifactId>
+                <version>${fastexcel.version}</version>
+            </dependency>
+            <!-- springdoc OpenAPI3 + Swagger UI（webmvc 线；webflux 网关场景业务另引 webflux 版） -->
+            <dependency>
+                <groupId>org.springdoc</groupId>
+                <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+                <version>${springdoc.version}</version>
+            </dependency>
+            <!--
+                fastexcel(2.16.1) 与 feign-form-spring(2.11.0) 传递的 commons-io 版本分歧，
+                锁定高版本收敛；commons-io 向后兼容性好，升级对 feign-form-spring 无影响
+            -->
+            <dependency>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>2.16.1</version>
             </dependency>
 
             <!-- 构建期工具，仅 test scope 使用 -->

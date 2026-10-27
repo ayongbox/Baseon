@@ -22,7 +22,8 @@ docs/
 | 2 期 | starter-web（异常、Jackson、上下文、日志、CORS）+ starter-trace（TraceId、MDC、异步透传） | ✅ 完成 |
 | 3 期 | starter-cloud-nacos + starter-cloud-feign + starter-loadbalance（注册发现、上下文透传、灰度路由） | ✅ 完成（`0d7426c`） |
 | 4 期 | starter-datasource + starter-mybatis-plus + starter-redis + starter-cache + starter-tenant | ✅ 完成（`4b230e6`，155 个单测全绿） |
-| 5 期 | starter-auth / xss / sentinel / resilience / idempotent | ✅ 完成（208 个单测全绿，鉴权/限流/幂等/熔断闭环已联调验证） |
+| 5 期 | starter-auth / xss / sentinel / resilience / idempotent | ✅ 完成（`05678e0`，208 个单测全绿，鉴权/限流/幂等/熔断闭环已联调验证） |
+| 6 期 | 通用工具批：starter-excel / swagger / log / debug-tools | ✅ 完成（255 个单测全绿，prod 硬失效已联调验证）；数据层深水批（S-10/S-11）与基础设施批（S-22~S-25）按需启动 |
 
 ## 能力矩阵
 
@@ -35,7 +36,7 @@ docs/
 | `baseon-core` · context | `SecurityUtil`、`ContextWrapper`、`GrayContext`、`TenantIgnoreContext`（编程式 API） | ✅ 可用 |
 | `baseon-core` · cloud | `CloudHeaders`（灰度/链路 Header 常量） | ✅ 可用 |
 | `baseon-core` · spi | `CacheKeyPrefixProvider` | ✅ 可用（按需扩展） |
-| `baseon-core` · annotation | `@IgnoreTenant`、`@IgnoreTenantCache`、`@RequiresPermission`、`@Idempotent`、`@Degrade` | ✅ 可用 |
+| `baseon-core` · annotation | `@IgnoreTenant`、`@IgnoreTenantCache`、`@RequiresPermission`、`@Idempotent`、`@Degrade`、`@OperateLog` | ✅ 可用 |
 | `baseon-core` · secure | `AuthProvider`、`PermissionChecker`、`CryptoService`、`SensitiveType` 契约 | ✅ 可用（boot/db/launch 按需后补） |
 | `baseon-starter-web` | 全局异常、Jackson 统一、用户上下文、请求日志脱敏、CORS | ✅ 可用 |
 | `baseon-starter-trace` | TraceId、MDC、线程池/异步/定时任务透传、统一 logback 配置 | ✅ 可用 |
@@ -52,6 +53,10 @@ docs/
 | `baseon-starter-sentinel` | BlockException 统一映射（429/1005、503/9003）、租户热点参数限流、规则 Nacos 持久化 | ✅ 可用 |
 | `baseon-starter-resilience` | `@Degrade` 三策略兜底（CACHE/DEFAULT/FAIL_FAST）、熔断状态告警 SPI、复用 resilience4j 原生熔断/舱壁 | ✅ 可用 |
 | `baseon-starter-idempotent` | `@Idempotent` + Redis 原子占位、key 三级来源（SpEL/请求头/方法级）、租户前缀联动 | ✅ 可用 |
+| `baseon-starter-excel` | FastExcel 封装：导出自动响应头、导入逐行容错（行号+原因）、ZIP 魔数嗅探 | ✅ 可用 |
+| `baseon-starter-swagger` | OpenAPI3 + Bearer scheme（联动 auth）、生产 profile 双层硬关闭 | ✅ 可用 |
+| `baseon-starter-log` | `@OperateLog` 操作审计（操作人/租户/traceId/耗时/成败）、OperateLogHandler SPI | ✅ 可用 |
+| `baseon-starter-debug-tools` | `/debug/context`、`/debug/profiles`，生产三层硬失效 | ✅ 可用 |
 
 ## 文档维护约定
 

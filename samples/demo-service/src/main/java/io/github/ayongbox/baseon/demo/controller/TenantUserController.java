@@ -2,6 +2,7 @@ package io.github.ayongbox.baseon.demo.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.github.ayongbox.baseon.core.annotation.Idempotent;
+import io.github.ayongbox.baseon.core.annotation.OperateLog;
 import io.github.ayongbox.baseon.core.annotation.RequiresPermission;
 import io.github.ayongbox.baseon.core.model.R;
 import io.github.ayongbox.baseon.demo.entity.TenantUser;
@@ -30,7 +31,8 @@ public class TenantUserController {
         this.service = service;
     }
 
-    /** 创建：同名占位窗口内重复提交被幂等拦截；需 user:create 权限 */
+    /** 创建：同名占位窗口内重复提交被幂等拦截；需 user:create 权限；记操作审计 */
+    @OperateLog(module = "user", action = "创建用户")
     @Idempotent(key = "#name")
     @RequiresPermission("user:create")
     @PostMapping

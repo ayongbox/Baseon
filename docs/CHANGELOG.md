@@ -5,6 +5,32 @@
 
 ---
 
+## [1.0.0-SNAPSHOT] · 6 期：通用工具批（excel + swagger + log + debug-tools）
+
+**日期**：2026-10-27
+
+### 新增能力
+
+- `baseon-starter-excel`：`ExcelTemplate` 封装 FastExcel——导出自动写 xlsx 响应头（文件名 UTF-8 编码、自动补 `.xlsx` 后缀）；导入逐行容错（单行脏数据不中断整批），`ImportResult` 携带成功行与失败行明细（物理行号 + 原始内容 + 原因）；非 xlsx 文件先嗅探 ZIP 魔数再解析，避免 FastExcel 静默降级 CSV 解析返回空结果。
+- `baseon-starter-swagger`：OpenAPI3 元信息装配（title/description/version 可配）+ 全局 Bearer security scheme（与 starter-auth 联动，Swagger UI 右上角贴 token 即可调试受保护接口）；生产硬关闭双层机制：装配层条件拦截定制 Bean，`EnvironmentPostProcessor` 层强制覆盖 `springdoc.api-docs.enabled=false` 与 `swagger-ui.enabled=false`（即使 Nacos/yml 误开也无效），触发 profile 名单 `baseon.swagger.prod-profiles` 可配（默认 `[prod]`）。
+- `baseon-starter-log`：`@OperateLog(module, action)` 业务语义操作审计——环绕采集操作人/租户/traceId/方法签名/入参摘要（`recordArgs=false` 可关，`argMaxLength` 截断）/耗时/成败结果，异常原样上抛不吞；输出走 `OperateLogHandler` SPI，默认 `LoggingOperateLogHandler` 打日志（success INFO / failed WARN），业务声明自己的实现即可改写库/MQ。
+- `baseon-starter-debug-tools`：`/debug/context`（当前登录上下文 + traceId + 请求头摘要）、`/debug/profiles`（生效 profile 与开关状态）；生产硬失效三层：装配期 `Condition` 拦截端点注册、端点方法内二次拦截返回 404、WARN 留痕——debug 端点暴露上下文属信息泄露面，是硬失效而非可配置关闭。
+- `core` 新增 `@OperateLog` 注解（module/action/recordArgs）。
+- `samples/demo-service` 接线：`/demo/excel/export|import`（导出当前租户用户、导入逐行容错落库）、`TenantUserController.create` 挂 `@OperateLog`、auth 白名单放行 swagger/debug 端点、Swagger 元信息配置。
+- 47 个新单元测试（excel 10 + swagger 15 + log 7 + debug-tools 15），全量 255 个测试全绿。
+- 联调验证：Swagger api-docs/UI 可访问且携带 bearerAuth；debug 端点放行并返回上下文；Excel 导出 200（中文文件名正确编码）+ 导出文件回灌导入 5 行全成功；`@OperateLog` 审计日志字段完整；prod profile 下 `/v3/api-docs`、`/swagger-ui/*`、`/debug/*` 全部 404 且两条硬失效 WARN 留痕。
+
+### 注意事项
+
+1. **`ignore-paths` 是整体覆盖**：starter-auth 的白名单默认仅 `/auth/login`、`/auth/refresh`，业务在 yml 配置时会整体替换默认列表（demo 中为放行 swagger/debug 需把 login/refresh 一并列出），与请求日志排除路径的双 key 设计不同，注意别锁死登录入口。
+2. **导出 fileName 不含扩展名**：`ExcelTemplate.export` 自动补 `.xlsx`，调用方再带后缀会得到 `xx.xlsx.xlsx`。
+3. **FastExcel 按 getter 取值**：导出 DTO 必须有标准 getter/setter，否则只导出表头。
+4. **commons-io 版本收敛**：fastexcel（2.16.1）与 feign-form-spring（2.11.0）传递依赖分歧，父 POM 已锁定 2.16.1（P-018）。
+5. **JWT 篡改测试勿改签名末字符**：Base64URL 末字符含填充 bit，改动可能不破坏签名导致测试概率性失败，应改倒数第二个字符（P-017）。
+6. **demo  jar 资源缺失排查**：reactor 全量打包偶发丢 `application.yml` 等资源导致启动报 `No spring.config.import property has been defined`，对 demo 模块单独 `clean package` 重打即可（P-016 同类）。
+
+---
+
 ## [1.0.0-SNAPSHOT] · 5 期：安全与韧性（auth + xss + sentinel + resilience + idempotent）
 
 **日期**：2026-10-24

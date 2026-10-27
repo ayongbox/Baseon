@@ -52,6 +52,19 @@ baseon:
   # 禁止把生产密钥写进代码库，也禁止照搬本值。
   auth:
     secret: baseon-demo-local-dev-secret-do-not-use-in-prod
+    # 放行登录/刷新 + Swagger 端点 + debug 端点（6 期），其余接口默认要求登录。
+    # 注意 ignore-paths 是整体覆盖默认列表，/login、/refresh 必须一并列出
+    ignore-paths:
+      - /auth/login
+      - /auth/refresh
+      - /swagger-ui/**
+      - /v3/api-docs/**
+      - /debug/**
+  # 6 期：Swagger 文档元信息（生产 profile 下由 starter-swagger 双层硬关闭，无需在此开关）
+  swagger:
+    title: Baseon Demo API
+    description: 脚手架能力演示接口（鉴权/租户/缓存/限流/熔断/幂等/Excel）
+    version: 1.0.0-SNAPSHOT
   # 4 期：动态数据源，本地用同实例两个 schema 模拟主从
   datasource:
     master:
