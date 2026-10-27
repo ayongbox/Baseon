@@ -2,6 +2,7 @@ package io.github.ayongbox.baseon.starter.swagger.config;
 
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.security.SecurityScheme;
+import io.swagger.v3.oas.models.servers.Server;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.env.MockEnvironment;
 
@@ -127,5 +128,52 @@ class BaseonSwaggerAutoConfigurationTest {
         assertThat(openAPI.getSecurity())
                 .singleElement()
                 .satisfies(requirement -> assertThat(requirement).containsKey("bearerAuth"));
+    }
+
+    @Test
+    void serverDescriptionCustomizerUsesApplicationNameByDefault() {
+        // Given：未配置 server-description，环境里有 spring.application.name
+        MockEnvironment environment = new MockEnvironment()
+                .withProperty("spring.application.name", "order-service");
+        OpenAPI openAPI = new OpenAPI().servers(List.of(
+                new Server().url("http://192.168.0.4:8081").description("Generated server url")));
+
+        // When：对 springdoc 自动补全后的 servers 应用定制器
+        configuration.baseonServerDescriptionCustomizer(new BaseonSwaggerProperties(), environment)
+                .customise(openAPI);
+
+        // Then：说明文字替换为服务名，url 保持不变（Try it out 仍指向原地址）
+        assertThat(openAPI.getServers()).singleElement().satisfies(server -> {
+            assertThat(server.getDescription()).isEqualTo("order-service");
+            assertThat(server.getUrl()).isEqualTo("http://192.168.0.4:8081");
+        });
+    }
+
+    @Test
+    void serverDescriptionCustomizerPrefersExplicitlyConfiguredValue() {
+        // Given：显式配置了说明文字
+        BaseonSwaggerProperties properties = new BaseonSwaggerProperties();
+        properties.setServerDescription("订单中心");
+        MockEnvironment environment = new MockEnvironment()
+                .withProperty("spring.application.name", "order-service");
+        OpenAPI openAPI = new OpenAPI().servers(List.of(new Server().url("http://127.0.0.1:8081")));
+
+        // When：应用定制器
+        configuration.baseonServerDescriptionCustomizer(properties, environment).customise(openAPI);
+
+        // Then：配置值优先于服务名
+        assertThat(openAPI.getServers()).singleElement()
+                .satisfies(server -> assertThat(server.getDescription()).isEqualTo("订单中心"));
+    }
+
+    @Test
+    void serverDescriptionCustomizerSkipsWhenNoServersOrName() {
+        // Given：既无 servers 也无服务名
+        OpenAPI openAPI = new OpenAPI();
+
+        // When / Then：定制器静默跳过，不抛异常也不塞入空说明
+        configuration.baseonServerDescriptionCustomizer(new BaseonSwaggerProperties(), new MockEnvironment())
+                .customise(openAPI);
+        assertThat(openAPI.getServers()).isNull();
     }
 }

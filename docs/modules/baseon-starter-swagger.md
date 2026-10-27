@@ -15,10 +15,11 @@
 
 ## 自动装配清单
 
-| 组件 | 作用 | 默认行为 |
-|---|---|---|
-| `baseonOpenAPI`（`io.swagger.v3.oas.models.OpenAPI`） | 定制文档 info（title/description/version 从 `baseon.swagger.*` 读取）+ 注册名为 `bearerAuth` 的 HTTP Bearer/JWT 安全方案，并以 `SecurityRequirement` 全局生效 | 默认装配（Servlet Web 应用且 `baseon.swagger.enabled!=false` 且未命中生产 profile），业务可定义同名 Bean 整体替换 |
-| `ProdProfileSwaggerDisabler` | `EnvironmentPostProcessor`：命中生产 profile 时把 `springdoc.api-docs.enabled=false`、`springdoc.swagger-ui.enabled=false` 以 `MapPropertySource` addFirst 塞进 Environment，强制关闭端点 | 随 spring.factories 注册即生效，无 Bean |
+| 组件                                                  | 作用                                                                                                                                                                      | 默认行为                                                                                   |
+| --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `baseonOpenAPI`（`io.swagger.v3.oas.models.OpenAPI`） | 定制文档 info（title/description/version 从 `baseon.swagger.*` 读取）+ 注册名为 `bearerAuth` 的 HTTP Bearer/JWT 安全方案，并以 `SecurityRequirement` 全局生效                                    | 默认装配（Servlet Web 应用且 `baseon.swagger.enabled!=false` 且未命中生产 profile），业务可定义同名 Bean 整体替换 |
+| `baseonServerDescriptionCustomizer`（`OpenApiCustomizer`） | springdoc 补全 servers 后执行，把 Servers 下拉项的说明文字从 `Generated server url` 换成服务名，多服务聚合时便于分辨文档归属                                          | 默认装配；说明文字取 `baseon.swagger.server-description`，留空回退 `spring.application.name`，两者皆空则跳过 |
+| `ProdProfileSwaggerDisabler`                        | `EnvironmentPostProcessor`：命中生产 profile 时把 `springdoc.api-docs.enabled=false`、`springdoc.swagger-ui.enabled=false` 以 `MapPropertySource` addFirst 塞进 Environment，强制关闭端点 | 随 spring.factories 注册即生效，无 Bean                                                        |
 
 注册方式：自动配置走 `AutoConfiguration.imports`；`EnvironmentPostProcessor` 走 `META-INF/spring.factories`（Boot 3 对 EnvironmentPostProcessor 仍保留 spring.factories 通道）。
 
@@ -31,24 +32,26 @@ baseon:
     title: Baseon API        # 文档标题
     description: Baseon 脚手架接口文档
     version: 1.0.0           # 文档版本号
+    server-description: 订单中心   # Servers 下拉的说明文字，留空取 spring.application.name
     prod-profiles:           # 生产 profile 名单，命中即触发双层关闭
       - prod
 ```
 
-| 配置项 | 类型 | 默认值 | 说明 |
-|---|---|---|---|
-| `baseon.swagger.enabled` | boolean | `true` | 总开关，只管本模块定制 Bean，不管 springdoc 端点本身 |
-| `baseon.swagger.title` | String | `Baseon API` | 文档标题 |
-| `baseon.swagger.description` | String | `Baseon 脚手架接口文档` | 文档描述 |
-| `baseon.swagger.version` | String | `1.0.0` | 文档版本号 |
-| `baseon.swagger.prod-profiles` | List\<String\> | `[prod]` | 生产 profile 名单，与激活 profile 有交集即视为生产，可追加 `production`、`pre` 等 |
+| 配置项                            | 类型            | 默认值              | 说明                                                          |
+| ------------------------------ | ------------- | ---------------- | ----------------------------------------------------------- |
+| `baseon.swagger.enabled`       | boolean       | `true`           | 总开关，只管本模块定制 Bean，不管 springdoc 端点本身                          |
+| `baseon.swagger.title`         | String        | `Baseon API`     | 文档标题                                                        |
+| `baseon.swagger.description`   | String        | `Baseon 脚手架接口文档` | 文档描述                                                        |
+| `baseon.swagger.version`       | String        | `1.0.0`          | 文档版本号                                                       |
+| `baseon.swagger.server-description` | String   | 空（回退服务名）        | Swagger UI 中 Servers 下拉项的说明文字，替代 `Generated server url`                     |
+| `baseon.swagger.prod-profiles` | List\<String> | `[prod]`         | 生产 profile 名单，与激活 profile 有交集即视为生产，可追加 `production`、`pre` 等 |
 
 ## 快速上手
 
 以 samples/demo-service 为例，引入依赖后直接启动：
 
 1. 访问 `http://localhost:8080/swagger-ui/index.html`，页面标题/版本来自 `baseon.swagger.*`。
-2. 点击右上角 **Authorize**，在 `bearerAuth` 弹窗里粘贴登录拿到的 JWT（只贴 token 本体即可，UI 会自动补 `Bearer ` 前缀）。
+2. 点击右上角 **Authorize**，在 `bearerAuth` 弹窗里粘贴登录拿到的 JWT（只贴 token 本体即可，UI 会自动补 `Bearer `  前缀）。
 3. 之后直接在 UI 里调试受保护接口，如 `/tenant/user/list`——请求会自动携带 `Authorization: Bearer <token>` 头，与 baseon-starter-auth 的过滤器链路无缝衔接。
 
 业务代码零改动：springdoc 自动扫描 `@RestController`，无需加任何注解。
@@ -81,11 +84,11 @@ java -jar demo-service.jar --spring.profiles.active=prod
 3. **webmvc 线专用**：引入的是 `springdoc-openapi-starter-webmvc-ui`，仅适配 Servlet 栈；本模块的生产硬关闭逻辑（EnvironmentPostProcessor）与栈无关依然生效。
 4. **非 Web 应用不装配**：自动配置带 `@ConditionalOnWebApplication(SERVLET)`，纯定时任务类服务引入本依赖不会启动文档端点。
 
-## 网关聚合方案（7 期落地，samples/demo-gateway 为参考实现）
+网关聚合方案（7 期落地，samples/demo-gateway 为参考实现）
 
 微服务环境下各服务不再单独暴露 swagger-ui，文档 UI 统一收敛到网关：
 
 - **业务服务侧（本模块）**：只保留 `/v3/api-docs` 端点，yml 加 `springdoc.swagger-ui.enabled: false` 关闭本地 UI；
 - **网关侧（webflux）**：引 `springdoc-openapi-starter-webflux-ui`（版本与 webmvc 线一致，父 POM 统一管控），`GatewaySwaggerDocConfig` 从 DiscoveryClient 动态生成各服务文档地址（`/{serviceId}/v3/api-docs`，经网关 discovery locator 路由转发）填入 Swagger UI 下拉列表；启动时初始化 + Nacos HeartbeatEvent 触发刷新，网关自身排除。
 
-注意两个坑：**网关侧不要配 `springdoc.api-docs.enabled=false`**——webflux 线 UI 的配置 Bean 整体受 api-docs 开关门控，关掉 swagger-ui 也起不来（P-019）；springdoc 2.x 的聚合配置端点是 `/v3/api-docs/swagger-config`。服务上下线后下拉列表刷新有心跳延迟（约 30s），非实时。
+注意两个坑：**网关侧不要配** **`springdoc.api-docs.enabled=false`**——webflux 线 UI 的配置 Bean 整体受 api-docs 开关门控，关掉 swagger-ui 也起不来（P-019）；springdoc 2.x 的聚合配置端点是 `/v3/api-docs/swagger-config`。服务上下线后下拉列表刷新有心跳延迟（约 30s），非实时。

@@ -5,8 +5,10 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
+import io.swagger.v3.oas.models.servers.Server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -19,6 +21,7 @@ import org.springframework.context.annotation.ConditionContext;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.core.env.Environment;
 import org.springframework.core.type.AnnotatedTypeMetadata;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
 import java.util.Set;
@@ -60,6 +63,33 @@ public class BaseonSwaggerAutoConfiguration {
                                 .scheme("bearer")
                                 .bearerFormat("JWT")))
                 .addSecurityItem(new SecurityRequirement().addList(BEARER_AUTH_SCHEME));
+    }
+
+    /**
+     * 给 Servers 下拉补上服务名。
+     *
+     * <p>springdoc 在 OpenAPI Bean 未声明 servers 时会自动补一个
+     * {@code http://ip:port} + "Generated server url"，多服务聚合时只看到一串
+     * IP 加端口，难以分辨文档归属。本定制器在 springdoc 补全 servers 之后执行
+     * （见 AbstractOpenApiResource 的 customiser 调用时机），把说明文字替换为
+     * {@code baseon.swagger.server-description}，留空则取 {@code spring.application.name}。
+     *
+     * <p>只改说明文字、不改 url：直连与经网关聚合两种访问方式下 url 语义不同，
+     * 改写 url 会让 Try it out 打到错误地址。
+     */
+    @Bean
+    @ConditionalOnMissingBean(name = "baseonServerDescriptionCustomizer")
+    public OpenApiCustomizer baseonServerDescriptionCustomizer(BaseonSwaggerProperties properties,
+                                                               Environment environment) {
+        String configured = properties.getServerDescription();
+        String serverDescription = StringUtils.hasText(configured)
+                ? configured : environment.getProperty("spring.application.name");
+        return openApi -> {
+            List<Server> servers = openApi.getServers();
+            if (StringUtils.hasText(serverDescription) && servers != null) {
+                servers.forEach(server -> server.setDescription(serverDescription));
+            }
+        };
     }
 
     /**

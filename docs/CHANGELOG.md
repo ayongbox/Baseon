@@ -5,6 +5,23 @@
 
 ---
 
+## [1.0.0-SNAPSHOT] · 补充：Swagger Servers 下拉显示服务名
+
+**日期**：2026-10-27
+
+### 新增能力
+
+- `baseon-starter-swagger` 新增 `baseonServerDescriptionCustomizer`：在 springdoc 补全 servers 后（`AbstractOpenApiResource` 的 customiser 阶段）把下拉说明文字从 `Generated server url` 换成服务名，多服务聚合时不必靠 IP+端口辨认文档归属。
+- 新增配置项 `baseon.swagger.server-description`：显式指定说明文字；留空回退 `spring.application.name`，两者皆空则跳过。
+- 3 个新单元测试覆盖回退服务名、配置优先、无 servers 时静默跳过。
+
+### 注意事项
+
+1. **只改说明文字，不改 url**：直连与经网关聚合两种访问方式下 server url 语义不同，改写会让 Try it out 打到错误地址。
+2. **已启动的服务需重新打包才能看到效果**：该定制器随 starter jar 生效，老进程重启前仍显示 `Generated server url`。
+
+---
+
 ## [1.0.0-SNAPSHOT] · 8 期：分布式追踪接入（tracing-otel + starter-trace 协同）
 
 **日期**：2026-10-27
