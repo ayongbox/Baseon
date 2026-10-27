@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>io.github.ayongbox</groupId>
+        <artifactId>baseon-parent</artifactId>
+        <version>${revision}</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>baseon-generator-maven-plugin</artifactId>
+    <packaging>maven-plugin</packaging>
+
+    <name>baseon-generator-maven-plugin</name>
+    <description>代码生成器 Maven 插件：按数据库表元数据渲染 CRUD 代码骨架（mvn baseon:generate）</description>
+
+    <properties>
+        <!-- Maven API 本身不属于父 POM dependencyManagement 管控范围，由本模块自行锁定 -->
+        <maven.api.version>3.8.6</maven.api.version>
+        <!-- 注解版本与父 POM 锁定的 maven-plugin-plugin 保持同线 -->
+        <maven-plugin-annotations.version>3.13.1</maven-plugin-annotations.version>
+    </properties>
+
+    <dependencies>
+        <!-- 插件 API：Maven 运行时提供，provided 防止打进插件自身类路径 -->
+        <dependency>
+            <groupId>org.apache.maven</groupId>
+            <artifactId>maven-plugin-api</artifactId>
+            <version>${maven.api.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.maven.plugin-tools</groupId>
+            <artifactId>maven-plugin-annotations</artifactId>
+            <version>${maven-plugin-annotations.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- 表元数据读取：仅 meta 包使用，core 纯库不允许感知 -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-generator</artifactId>
+        </dependency>
+        <!-- MP generator 不传递核心包，ConfigBuilder 内部用到 toolkit.StringUtils，必须显式引入 -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus</artifactId>
+        </dependency>
+        <!-- 默认连接 MySQL，插件执行期才需要驱动 -->
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <!-- 模板渲染，版本由 Boot BOM 管控 -->
+        <dependency>
+            <groupId>org.freemarker</groupId>
+            <artifactId>freemarker</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.tngtech.archunit</groupId>
+            <artifactId>archunit-junit5</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-plugin-plugin</artifactId>
+                <configuration>
+                    <!-- 覆盖默认前缀推导（默认会生成 baseon-generator），保证 mvn baseon:generate 可用 -->
+                    <goalPrefix>baseon</goalPrefix>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

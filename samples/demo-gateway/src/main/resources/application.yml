@@ -1,0 +1,42 @@
+server:
+  port: 8090
+
+spring:
+  application:
+    name: demo-gateway
+  cloud:
+    nacos:
+      server-addr: localhost:8848
+      username: nacos
+      password: nacos
+      discovery:
+        # 本地联调固定注册回环地址：多网卡环境下 Nacos 默认选取的局域网 IP
+        # 可能随网络切换失效，导致调用方拿到不可达地址（502/超时）。
+        # 仅本地验证使用，生产部署必须删除本段，让框架自动选路。
+        ip: 127.0.0.1
+    gateway:
+      discovery:
+        locator:
+          # 服务发现路由：所有注册到 Nacos 的服务自动经 /{serviceId}/** 可达，
+          # Swagger 聚合拉取各服务 /v3/api-docs 也走这条通道
+          enabled: true
+          # serviceId 统一转小写后再匹配，避免大小写不一致导致路由 503
+          lower-case-service-id: true
+      routes:
+        # 显式路由示例（谓词 + 过滤器写法）：/api/demo/** 剥离前两段前缀后
+        # 经负载均衡转发给 baseon-demo-service，即 /api/demo/xxx -> lb://baseon-demo-service/xxx
+        - id: demo-service-explicit
+          uri: lb://baseon-demo-service
+          predicates:
+            - Path=/api/demo/**
+          filters:
+            - StripPrefix=2
+  # nacos starter 含配置中心能力，optional 前缀表示配置不存在也能启动
+  config:
+    import:
+      - optional:nacos:demo-gateway.yaml
+
+# 网关聚合模式：保留 swagger-ui 承载各服务文档的下拉列表。
+# 注意：不要配置 springdoc.api-docs.enabled=false——webflux 线的 UI 自动配置
+#（SwaggerUiConfigProperties 等 Bean）整体受 api-docs 开关门控，关掉后 swagger-ui 也无法启动。
+# 网关自身无业务接口，其 /v3/api-docs 只返回空文档，无暴露面。

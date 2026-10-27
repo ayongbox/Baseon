@@ -56,9 +56,9 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler({
-            MissingServletRequestParameterException.class,
-            MethodArgumentTypeMismatchException.class,
-            HttpMessageNotReadableException.class
+        MissingServletRequestParameterException.class,
+        MethodArgumentTypeMismatchException.class,
+        HttpMessageNotReadableException.class
     })
     public ResponseEntity<R<Void>> handleBadRequest(Exception exception) {
         log.warn("请求参数非法: {}", exception.getMessage());

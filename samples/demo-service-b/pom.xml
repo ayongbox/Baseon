@@ -30,6 +30,11 @@
             <groupId>io.github.ayongbox</groupId>
             <artifactId>baseon-starter-cloud-nacos</artifactId>
         </dependency>
+        <!-- 7 期：网关聚合文档方案，下游服务保留 /v3/api-docs 供网关拉取（UI 已关，收敛到网关） -->
+        <dependency>
+            <groupId>io.github.ayongbox</groupId>
+            <artifactId>baseon-starter-swagger</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

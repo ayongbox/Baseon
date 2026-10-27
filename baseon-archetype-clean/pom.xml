@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>io.github.ayongbox</groupId>
+        <artifactId>baseon-parent</artifactId>
+        <version>${revision}</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>baseon-archetype-clean</artifactId>
+    <packaging>maven-archetype</packaging>
+
+    <name>baseon-archetype-clean</name>
+    <description>老项目迁移用空结构原型：仅最小依赖 + 启动类 + 基础配置，5 分钟起服务</description>
+
+    <build>
+        <!-- maven-archetype 打包生命周期由该扩展提供，版本与 maven-archetype-plugin 保持一致 -->
+        <extensions>
+            <extension>
+                <groupId>org.apache.maven.archetype</groupId>
+                <artifactId>archetype-packaging</artifactId>
+                <version>${maven-archetype-plugin.version}</version>
+            </extension>
+        </extensions>
+    </build>
+</project>

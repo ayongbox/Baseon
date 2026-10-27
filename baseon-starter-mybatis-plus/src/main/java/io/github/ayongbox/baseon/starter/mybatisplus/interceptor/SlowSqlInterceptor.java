@@ -51,13 +51,13 @@ import java.util.function.BiConsumer;
  * 不经过插件代理，每条 SQL 只会被最外层入口计时一次。
  */
 @Intercepts({
-        @Signature(type = Executor.class, method = "update",
-                args = {MappedStatement.class, Object.class}),
-        @Signature(type = Executor.class, method = "query",
-                args = {MappedStatement.class, Object.class, RowBounds.class, ResultHandler.class}),
-        @Signature(type = Executor.class, method = "query",
-                args = {MappedStatement.class, Object.class, RowBounds.class, ResultHandler.class,
-                        CacheKey.class, BoundSql.class})
+    @Signature(type = Executor.class, method = "update",
+            args = {MappedStatement.class, Object.class}),
+    @Signature(type = Executor.class, method = "query",
+            args = {MappedStatement.class, Object.class, RowBounds.class, ResultHandler.class}),
+    @Signature(type = Executor.class, method = "query",
+            args = {MappedStatement.class, Object.class, RowBounds.class, ResultHandler.class,
+                    CacheKey.class, BoundSql.class})
 })
 public class SlowSqlInterceptor implements Interceptor {
 
