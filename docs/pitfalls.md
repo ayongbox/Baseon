@@ -256,3 +256,15 @@
 **解决**：启动类用 **protected** 构造器——`HideUtilityClassConstructor` 只拦 public/默认构造器，protected 既过规则又不破坏代理；纯静态工具类才用 private。
 
 **规避**：修「工具类构造器」类违规时先辨认类身份：被 Spring 代理的类（`@Configuration`/`@SpringBootApplication`）一律 protected，别图省事用 private。
+
+---
+
+## P-022 · Feign 链路断裂：缺 feign-micrometer 时下游另起 trace
+
+**现象**：接入 OTel 分布式追踪后 A 经 Feign 调 B，A 的 traceId（响应头、业务日志）与 B 的 traceId 不一致——自定义头 `X-Trace-Id` 透传值是对的，但 B 的 MDC/span 用的是另一个全新 ID，追踪后端里链路断成两截。
+
+**根因**：spring-cloud-openfeign 的观测能力（client span 创建 + W3C `traceparent` 头注入）由独立工件 `io.github.openfeign:feign-micrometer` 承载，`spring-cloud-starter-openfeign` 本身不含。缺失时 Feign 调用不注入 `traceparent`，下游的 observation 过滤器解析不到传播头，只能新建 trace。脚手架自定义头透传（`X-Trace-Id`）与 W3C 传播是两条独立通道，前者正常不代表后者正常。
+
+**解决**：`baseon-starter-tracing-otel` 聚合 `feign-micrometer`（版本由 spring-cloud BOM 经 feign-bom 管理，无需手写）；它是纯能力包不含 web 栈，不用 Feign 的服务引入后自动不生效。
+
+**规避**：验证分布式追踪链路时，必须对比「下游 span 的 traceId 是否等于上游」，仅看上游自身日志对齐不够。`traceparent` 格式为 `00-{traceId}-{spanId}-{flags}`，排查时可直接抓包看这个头有没有注入。

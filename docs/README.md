@@ -25,6 +25,7 @@ docs/
 | 5 期 | starter-auth / xss / sentinel / resilience / idempotent | ✅ 完成（`05678e0`，208 个单测全绿，鉴权/限流/幂等/熔断闭环已联调验证） |
 | 6 期 | 通用工具批：starter-excel / swagger / log / debug-tools | ✅ 完成（255 个单测全绿，prod 硬失效已联调验证）；数据层深水批（S-10/S-11）与基础设施批（S-22~S-25）按需启动 |
 | 7 期 | generator 插件 + archetype×2 + demo-gateway + Swagger 聚合 + 全量 ArchUnit/Checkstyle | ✅ 完成（319 个单测全绿，verify 卡点生效，生成器/archetype/网关聚合均已实测） |
+| 8 期 | starter-tracing-otel（OTel 分布式追踪接入）+ starter-trace 协同改造 | ✅ 完成（327 个单测全绿，A→B 链路 traceId 四处一致实测通过） |
 
 ## 能力矩阵
 
@@ -58,6 +59,7 @@ docs/
 | `baseon-starter-swagger` | OpenAPI3 + Bearer scheme（联动 auth）、生产 profile 双层硬关闭 | ✅ 可用 |
 | `baseon-starter-log` | `@OperateLog` 操作审计（操作人/租户/traceId/耗时/成败）、OperateLogHandler SPI | ✅ 可用 |
 | `baseon-starter-debug-tools` | `/debug/context`、`/debug/profiles`，生产三层硬失效 | ✅ 可用 |
+| `baseon-starter-tracing-otel` | OTel 分布式追踪接入（span 树/OTLP 上报/本地日志档），与 starter-trace 统一 traceId | ✅ 可用 |
 | `baseon-generator-maven-plugin` | `mvn baseon:generate -Dtable=` 生成 CRUD 9 件套，core 纯库 + Mojo 薄壳 | ✅ 可用 |
 | `baseon-archetype-clean` / `baseon-archetype-sample` | 项目原型：空结构（迁移）/ 全景示例（新建），5 分钟起服务 | ✅ 可用 |
 | `samples/demo-gateway` | Spring Cloud Gateway 示例：Nacos 注册、discovery 路由、Swagger 聚合 UI | ✅ 可用（示例，不发布） |

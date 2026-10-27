@@ -34,6 +34,7 @@
         <module>baseon-starter-swagger</module>
         <module>baseon-starter-log</module>
         <module>baseon-starter-debug-tools</module>
+        <module>baseon-starter-tracing-otel</module>
         <module>samples/demo-service</module>
         <module>samples/demo-service-b</module>
         <!-- 7 期：代码生成器 + 原型模板 + 网关示例 -->
@@ -208,6 +209,11 @@
             <dependency>
                 <groupId>io.github.ayongbox</groupId>
                 <artifactId>baseon-starter-debug-tools</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.ayongbox</groupId>
+                <artifactId>baseon-starter-tracing-otel</artifactId>
                 <version>${revision}</version>
             </dependency>
 

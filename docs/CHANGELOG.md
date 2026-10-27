@@ -5,6 +5,34 @@
 
 ---
 
+## [1.0.0-SNAPSHOT] · 8 期：分布式追踪接入（tracing-otel + starter-trace 协同）
+
+**日期**：2026-10-27
+
+### 新增能力
+
+- `baseon-starter-tracing-otel`：OpenTelemetry 分布式追踪一站式接入。聚合 actuator（micrometer-observation）+ micrometer-tracing-bridge-otel + OTLP exporter + feign-micrometer，引入后 Boot 自动装配 OTel SDK、web server span、Feign client span 与 W3C `traceparent` 传播。`baseon.tracing.otel.log-exporter-enabled=true` 开启本地日志导出档（LoggingSpanExporter + SimpleSpanProcessor 立即输出，零基础设施验证链路）；生产关本地档、配 `management.otlp.tracing.endpoint` 上报 collector。
+- `baseon-starter-trace` 协同改造：TraceId 过滤器按 classpath 二选一——无 micrometer-tracing 时装配原 `TraceIdFilter`（自有 ID 行为不变）；有时装配新增 `TracerAwareTraceIdFilter`：复用当前 span 的 traceId（`ServerHttpObservationFilter` 顺序 HIGHEST_PRECEDENCE+1 必先执行，currentSpan 稳定可得），MDC 生命周期让位 micrometer（key 同名天然对齐，logback pattern 零改动）；无当前 span（tracing 禁用/NOOP）自动回退自有 ID 逻辑。拆两个过滤器类保证无 OTel 依赖的工程运行期无需 micrometer 类。
+- samples/demo-service + demo-service-b 接入 tracing-otel，本地档配置：采样 1.0、`management.otlp.tracing.enabled=false`、log-exporter 开启。
+- 8 个新单元测试（TracerAwareTraceIdFilter 3 + tracing-otel 装配 3 + ArchUnit 2），全量 327 个测试全绿。
+
+### 联调验证
+
+- 同一 trace 贯穿三 span：A `http get /demo/call-b` SERVER → A Feign `HTTP GET` CLIENT → B `http get /demo/ping` SERVER，traceId 均为 `f1d813b0b62949cd0b1a47217d22e906`。
+- 日志 MDC 对齐：A/B 两边 RequestLogFilter 业务日志的 `[traceId]` 与 span 的 traceId 一致；响应头 `X-Trace-Id` 与 B 服务上下文 traceId 一致。
+- 回退验证（单测）：Tracer 无 currentSpan 时回退自有 ID 生成/继承，行为与 7 期一致。
+
+### 注意事项
+
+1. **feign-micrometer 是链路打通的关键**：缺失时 Feign 不注入 `traceparent`，下游另起 trace 导致链路断裂（P-022）；tracing-otel 已聚合，不用本模块而自行桥接 OTel 时必须记得补。
+2. **本地无 collector 务必关 OTLP**：`management.otlp.tracing.enabled=false`，否则 exporter 持续重试打噪音日志；生产环境反向操作（关 log-exporter、开 OTLP 配 endpoint）。
+3. **复用路径下 starter-trace 不再清理 MDC**：交给 micrometer scope 恢复；业务代码依然不得自行 `MDC.clear()`。
+4. **接入后 actuator 随之引入**：默认仅暴露 `/actuator/health`，接了 starter-auth 的服务会被认证拦截，按需加进 `baseon.auth.ignore-paths`。
+5. **采样率默认 0.1**：Boot 原生默认值；demo 里 1.0 仅为本地演示，生产高流量服务调回 0.01~0.1。
+6. **LoggingSpanExporter 日志行的 MDC traceId 为空**：exporter 回调在 observation scope 关闭后执行，属正常现象，以 span 内容里的 traceId 为准。
+
+---
+
 ## [1.0.0-SNAPSHOT] · 7 期：工程化收口（generator + archetype + 网关 + 全量架构/风格卡点）
 
 **日期**：2026-10-27

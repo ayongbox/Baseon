@@ -140,6 +140,11 @@
                 <artifactId>baseon-starter-debug-tools</artifactId>
                 <version>${revision}</version>
             </dependency>
+            <dependency>
+                <groupId>io.github.ayongbox</groupId>
+                <artifactId>baseon-starter-tracing-otel</artifactId>
+                <version>${revision}</version>
+            </dependency>
 
             <!-- 新增 Starter 时在此追加，与仓库模块同步维护 -->
 
