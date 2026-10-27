@@ -82,6 +82,23 @@
             <groupId>io.github.ayongbox</groupId>
             <artifactId>baseon-starter-idempotent</artifactId>
         </dependency>
+        <!-- 6 期：Excel + Swagger + 操作审计 + 调试工具 -->
+        <dependency>
+            <groupId>io.github.ayongbox</groupId>
+            <artifactId>baseon-starter-excel</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.ayongbox</groupId>
+            <artifactId>baseon-starter-swagger</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.ayongbox</groupId>
+            <artifactId>baseon-starter-log</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.ayongbox</groupId>
+            <artifactId>baseon-starter-debug-tools</artifactId>
+        </dependency>
         <dependency>
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
