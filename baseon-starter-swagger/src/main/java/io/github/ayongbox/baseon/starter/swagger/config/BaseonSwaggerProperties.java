@@ -35,6 +35,13 @@ public class BaseonSwaggerProperties {
     private String version = "1.0.0";
 
     /**
+     * Swagger UI 中 Servers 下拉项的说明文字，用于替代 springdoc 自动生成的
+     * "Generated server url"。留空时取 {@code spring.application.name}，
+     * 多服务聚合场景下便于辨认当前文档属于哪个服务。
+     */
+    private String serverDescription;
+
+    /**
      * 生产环境 profile 名单：激活 profile 与该列表存在交集时，
      * 定制层不装配 OpenAPI Bean，端点层强制关闭 api-docs 与 swagger-ui。
      * 默认 ["prod"]，可按企业实际追加 "production"、"pre" 等。
@@ -79,5 +86,13 @@ public class BaseonSwaggerProperties {
 
     public void setProdProfiles(List<String> prodProfiles) {
         this.prodProfiles = prodProfiles;
+    }
+
+    public String getServerDescription() {
+        return serverDescription;
+    }
+
+    public void setServerDescription(String serverDescription) {
+        this.serverDescription = serverDescription;
     }
 }
