@@ -19,6 +19,19 @@ spring:
     import:
       - optional:nacos:demo-service-b.yaml
 
+# 7 期：网关聚合文档——本服务只保留 /v3/api-docs 端点供网关拉取，UI 收敛到网关（8090）
+baseon:
+  swagger:
+    title: Demo Service B API
+    description: 下游演示服务接口文档（经网关聚合展示）
+    version: 1.0.0-SNAPSHOT
+
+# 7 期：Swagger 网关聚合场景，业务服务只保留 /v3/api-docs 端点供网关拉取，
+# UI 统一收敛到网关（demo-gateway:8090），本服务不再单独暴露 swagger-ui
+springdoc:
+  swagger-ui:
+    enabled: false
+
 logging:
   level:
     # 仅本地验证：demo 包整体 DEBUG，生产环境务必删除本段或调至 INFO。

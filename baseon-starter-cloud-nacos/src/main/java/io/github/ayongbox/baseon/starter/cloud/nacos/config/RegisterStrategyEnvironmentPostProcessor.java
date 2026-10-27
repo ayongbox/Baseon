@@ -46,6 +46,9 @@ public class RegisterStrategyEnvironmentPostProcessor implements EnvironmentPost
             case FULL_REGISTER -> {
                 // 生产档位：SCA 默认行为，不注入任何派生配置
             }
+            // RegisterStrategy 三档分支已穷尽，default 永不命中
+            default -> {
+            }
         }
 
         if (!derived.isEmpty()) {

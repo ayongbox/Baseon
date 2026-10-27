@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  业务自定义日志配置（可选）。
+  baseon-starter-trace 已在 classpath 根内置统一控制台格式（含 traceId 占位）：
+  删除本文件即回退到内置格式；保留本文件则整体覆盖（业务 classes 目录优先于依赖 jar）。
+  自定义时必须保留 %X{traceId:-} 占位，否则全链路日志失去关联键。
+  生产环境只输出 console，由采集 Agent（Filebeat/Fluent Bit）收集，不配置文件 appender。
+-->
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+    <springProperty scope="context" name="app" source="spring.application.name" defaultValue="app"/>
+
+    <!-- 与 starter-trace 内置格式保持一致：时间 → 级别 → [应用名] → [线程名] → [traceId] → logger → 消息 -->
+    <property name="CONSOLE_LOG_PATTERN"
+              value="%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(%5p) %clr([${app}]){magenta} %clr([%15.15t]){faint} %clr([%X{traceId:-}]){yellow} %clr(%-40.40logger{39}){cyan} : %m%n%wEx"/>
+
+    <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+
+    <!-- 本地/开发环境放开业务包 DEBUG 日志；框架 starter 包保持默认 INFO -->
+    <springProfile name="local,dev">
+        <logger name="${package}" level="DEBUG"/>
+    </springProfile>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+</configuration>

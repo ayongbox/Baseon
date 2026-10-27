@@ -1,0 +1,8 @@
+# 服务端口
+server:
+  port: 8080
+
+spring:
+  application:
+    # 应用名：同时作为日志 [应用名] 字段与后续接入注册中心时的服务名
+    name: ${artifactId}

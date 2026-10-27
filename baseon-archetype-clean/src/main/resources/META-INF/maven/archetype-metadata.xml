@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype-descriptor xmlns="https://maven.apache.org/plugins/maven-archetype-plugin/archetype-descriptor/1.1.0"
+                      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                      xsi:schemaLocation="https://maven.apache.org/plugins/maven-archetype-plugin/archetype-descriptor/1.1.0 https://maven.apache.org/plugins/maven-archetype-plugin/xsd/archetype-descriptor-1.1.0.xsd"
+                      name="baseon-archetype-clean">
+
+    <!-- 脚手架版本：生成时可通过 -DbaseonVersion=x.y.z 覆盖 -->
+    <requiredProperties>
+        <requiredProperty key="baseonVersion">
+            <defaultValue>1.0.0-SNAPSHOT</defaultValue>
+        </requiredProperty>
+    </requiredProperties>
+
+    <fileSets>
+        <!-- Java 源文件：按 package 生成包目录，并替换 ${package} 等变量 -->
+        <fileSet filtered="true" packaged="true" encoding="UTF-8">
+            <directory>src/main/java</directory>
+            <includes>
+                <include>**/*.java</include>
+            </includes>
+        </fileSet>
+        <!-- 配置文件：application.yml 中的 ${artifactId} 等占位符需替换 -->
+        <fileSet filtered="true" encoding="UTF-8">
+            <directory>src/main/resources</directory>
+            <includes>
+                <include>**/*</include>
+            </includes>
+        </fileSet>
+        <!-- 测试目录骨架：占位文件保证空目录随生成工程一并产出 -->
+        <fileSet packaged="true" encoding="UTF-8">
+            <directory>src/test/java</directory>
+            <includes>
+                <include>**/*</include>
+            </includes>
+        </fileSet>
+    </fileSets>
+</archetype-descriptor>

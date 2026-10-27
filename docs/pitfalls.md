@@ -220,3 +220,39 @@
 **解决**：父 POM dependencyManagement 显式锁定 commons-io 2.16.1（高版本，向后兼容性好，对 feign-form-spring 无影响）。
 
 **规避**：新增第三方依赖后第一时间跑一次全量构建让 enforcer 暴露收敛问题；锁版本时优先锁高版本并注释说明来源分歧， commons-io/commons-lang3 这类工具库高版本覆盖低版本通常安全，但锁完要跑相关模块测试确认。
+
+---
+
+## P-019 · springdoc webflux 线 `api-docs.enabled=false` 会把 swagger-ui 整体拖死
+
+**现象**：网关（springdoc webflux 2.5.0）配置 `springdoc.api-docs.enabled=false` 后启动直接失败：`No qualifying bean of type 'org.springdoc.core.properties.SwaggerUiConfigProperties'`。
+
+**根因**：webflux 线的 UI 自动配置 Bean（`SwaggerUiConfigProperties` / `SwaggerUiConfigParameters` 等）整体受 api-docs 开关门控——api-docs 一关，这些配置 Bean 根本不注册，swagger-ui 随之报废。api-docs 与 swagger-ui 在 webflux 线不是两个独立开关。
+
+**解决**：网关聚合场景保持 api-docs 默认开启（网关自身无业务接口，其 /v3/api-docs 只返回空文档，无暴露面），swagger-ui 承载各服务文档聚合即可。反向操作（业务服务只留 api-docs、关 swagger-ui）在 webmvc 线是安全的，已验证互不影响。
+
+**规避**：springdoc 2.x 的 swagger-config 端点路径是 `/v3/api-docs/swagger-config`（挂在 api-docs 路径下），排查聚合 404 时先确认路径前缀，不要按 1.x 的 `/v3/swagger-config` 猜。
+
+---
+
+## P-020 · mybatis-plus-generator 不传递 MP 核心包，插件运行期 NoClassDefFoundError
+
+**现象**：`baseon-generator-maven-plugin` 单测全绿，但 `mvn baseon:generate` 连真实库时报 `NoClassDefFoundError: com.baomidou.mybatisplus.core.toolkit.StringUtils`。
+
+**根因**：`mybatis-plus-generator` 的 pom 不把 `mybatis-plus` 核心包作为传递依赖；而 `ConfigBuilder` 处理表元数据时内部用到 `toolkit.StringUtils`。单测走的是 core 纯库路径（假 TableMeta），不经插件 realm 类加载，所以暴露不出来。
+
+**解决**：插件 pom 显式引 `com.baomidou:mybatis-plus`（父 POM dependencyManagement 与 MP 全家桶锁同版本线）。
+
+**规避**：Maven 插件「单测绿 ≠ 运行绿」——单测不经过插件 realm 隔离类加载器。插件代码一旦触碰第三方库的内部 API，必须补一次真实 goal 级冒烟（连真实环境跑 `-Dtable=`）才算验完。
+
+---
+
+## P-021 · @SpringBootApplication 启动类不能为 HideUtilityClassConstructor 加 private 构造器
+
+**现象**：接入 Checkstyle 后给启动类补 private 构造器消除 `HideUtilityClassConstructor` 违规，应用启动失败——CGLIB 无法创建配置类代理。
+
+**根因**：启动类同时是 `@Configuration`，Spring 需要 CGLIB 子类化代理；private 构造器破坏了代理创建。而启动类只有 static main 方法，在 Checkstyle 眼里长得像工具类。
+
+**解决**：启动类用 **protected** 构造器——`HideUtilityClassConstructor` 只拦 public/默认构造器，protected 既过规则又不破坏代理；纯静态工具类才用 private。
+
+**规避**：修「工具类构造器」类违规时先辨认类身份：被 Spring 代理的类（`@Configuration`/`@SpringBootApplication`）一律 protected，别图省事用 private。

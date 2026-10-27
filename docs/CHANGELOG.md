@@ -5,6 +5,39 @@
 
 ---
 
+## [1.0.0-SNAPSHOT] · 7 期：工程化收口（generator + archetype + 网关 + 全量架构/风格卡点）
+
+**日期**：2026-10-27
+
+### 新增能力
+
+- `baseon-generator-maven-plugin`：CRUD 代码生成 Maven 插件，`mvn baseon:generate -Dtable=t_xxx`（goalPrefix 显式锁定为 `baseon`）。渲染核心是纯库（`generator.core`：命名转换/MySQL→Java 类型映射/freemarker 渲染，零 Maven 依赖可单测），Mojo 仅薄壳；表元数据经 `mybatis-plus-generator` 的 ConfigBuilder 读取。输出 9 件套：Entity（含 tenant_id 自动继承 TenantEntity）/Mapper/Service/ServiceImpl/Controller（`R<T>`/`PageResult<T>` 风格与手写代码一致）/Converter(MapStruct)/Req/VO/Resp。参数：`-Dtable`（必填，逗号分隔多表）、`-Dmodule`、`-DbasePackage`、`-DoutputDir`、`-DdbUrl/-DdbUser/-DdbPassword`（默认对齐本地 demo 库）。
+- `baseon-archetype-clean`：老项目迁移用空结构原型——生成 pom（import baseon-bom）+ Application + application.yml + logback-spring.xml（复制 starter-trace 内置 pattern，local/dev 下业务包 DEBUG）。
+- `baseon-archetype-sample`：新项目全景模板——clean 全部内容 + 示例 Controller/Service/单测（演示 `R<T>` 统一返回、`PageQuery` 分页、`BizException` 抛出）。生成时可用 `-DbaseonVersion=x.y.z` 指定脚手架版本（默认 1.0.0-SNAPSHOT）。
+- `samples/demo-gateway`：Spring Cloud Gateway 示例（端口 8090），注册 Nacos；`discovery.locator` 自动路由 + 一条显式路由示例（`/api/demo/**` StripPrefix=2 → `lb://baseon-demo-service`）。
+- **Swagger 网关聚合方案落地**：业务服务只保留 `/v3/api-docs`、关闭各自 swagger-ui（`springdoc.swagger-ui.enabled=false`）；网关引 `springdoc-openapi-starter-webflux-ui`（与 webmvc 线同版本 2.5.0，父 POM 统一管控），`GatewaySwaggerDocConfig` 从 DiscoveryClient 动态生成各服务文档地址填入 UI 下拉列表（启动一次 + HeartbeatEvent 刷新，排除网关自身）。demo-service-b 本期补入 swagger starter。
+- **全量 ArchUnit**：19 个 starter 各补架构约束测试——不得依赖 samples；不得依赖「pom 声明的 starter 直接依赖 + 传递闭包」之外的 starter 包。core 的 ArchUnit 规则不变。
+- **Checkstyle 构建卡点**：父 POM 接入 maven-checkstyle-plugin 3.6.0（内核锁 10.18.0），精简规则集 15 条（仓库根 checkstyle.xml：未用 import/星号 import/花括号/缩进/行尾空格/文件末尾换行/每行单语句/switch default 等），绑定 `mvn verify` 全模块卡点，存量 43 处违规一次修齐。
+
+### 联调验证
+
+- 网关路由：`GET :8090/demo-service-b/demo/ping` 200（traceId 透传）；显式路由 `/api/demo/**` 到达 demo-service 处理器链。
+- 聚合文档：`:8090/v3/api-docs/swagger-config` 列出两个服务、排除网关自身；`:8090/swagger-ui.html` 302 → webjars UI；两服务 api-docs 均可经网关拉取；业务服务 swagger-ui 404、api-docs 200。
+- 生成器实测：对真实表 `t_tenant_user` 生成 9 文件，Controller 风格与手写一致。
+- archetype 出口标准「5 分钟起服务」：sample 生成 → `mvn test` 绿 → `spring-boot:run` → `/example/hello` 200；clean 生成 → compile 绿。
+- 全量回归：`mvn -T 1C clean verify` 全绿（319 个单测 + 28 模块 checkstyle 0 违规）。
+
+### 注意事项
+
+1. **`mvn baseon:generate` 短前缀需配 pluginGroup**：在 `~/.m2/settings.xml` 的 `<pluginGroups>` 加 `io.github.ayongbox` 后才可用短前缀；否则用全限定坐标 `mvn io.github.ayongbox:baseon-generator-maven-plugin:1.0.0-SNAPSHOT:generate`。
+2. **mybatis-plus-generator 不传递 MP 核心包**：插件 pom 已显式补 `com.baomidou:mybatis-plus`，改动插件依赖时不要误删（P-020）。
+3. **网关侧不要关 springdoc api-docs**：webflux 线 `api-docs.enabled=false` 会把 swagger-ui 的配置 Bean 一并带走导致启动失败（P-019）；业务服务侧关 UI 留 docs 安全。
+4. **Spring 代理类构造器用 protected**：Checkstyle 的 HideUtilityClassConstructor 不适用于 `@Configuration`/启动类，private 构造器会破坏 CGLIB 代理（P-021）。
+5. **网关聚合的服务列表刷新有心跳延迟**：服务上下线后下拉列表依赖 Nacos HeartbeatEvent（约 30s）刷新，非实时。
+6. **生成器未映射的列类型会显式抛错**（如 blob/time），遇到后按提示补 `JdbcTypeMapper` 映射，不静默降级。
+
+---
+
 ## [1.0.0-SNAPSHOT] · 6 期：通用工具批（excel + swagger + log + debug-tools）
 
 **日期**：2026-10-27

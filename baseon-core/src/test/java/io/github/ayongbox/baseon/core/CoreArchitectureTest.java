@@ -16,6 +16,9 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 )
 class CoreArchitectureTest {
 
+    private CoreArchitectureTest() {
+    }
+
     @ArchTest
     static final ArchRule pure_kernel_should_not_depend_on_spring =
             noClasses()
