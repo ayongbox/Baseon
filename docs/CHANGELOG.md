@@ -5,6 +5,34 @@
 
 ---
 
+## [1.0.0-SNAPSHOT] · 9 期：行列级数据权限（starter-data-scope）
+
+**日期**：2026-10-28
+
+### 新增能力
+
+- `baseon-starter-data-scope`：行级数据权限 + 字段级过滤。`@DataScope` 标在 Service 方法/类上，切面从 `DataScopeProvider` 拉取当前用户可见 ID 集合写入线程上下文；`DataScopeLineInnerInterceptor`（继承 MP `BaseMultiTableInnerInterceptor`，JSqlParser AST 改写）自动给 SELECT 追加 `column IN (...)` 条件。支持 `@IgnoreDataScope` 豁免、`baseon.data-scope.ignore-tables` 表白名单、`enabled` 总开关、`strict` 模式（未提供 Provider 时启动即失败，防权限漏配静默放行）。
+- 机制/策略分层落地：`DataScopeProvider` SPI 收在 `core.spi`（`visibleIds` / `column` / `visibleFields` 三方法），业务侧实现注入可见范围——**空集 = 查不到数据**（生成 `column = -1` 永假条件）、**null = 不限制**（放行）；框架只承载拦截与改写机制，权限规则留业务。
+- 字段级过滤走 Jackson 序列化阶段：`DataScopeFieldSerializerModifier` 包装 BeanSerializer，每次 serialize 按 `visibleFields()` 动态裁剪字段——不改 SQL、不破坏 ORM 映射与索引；`baseon.data-scope.field-filter-enabled=true` 且 classpath 有 ObjectMapper 才装配，与行级互不影响。
+- 拦截器顺序固化「租户 → 数据权限 → 分页」：新增 `DataScopeInnerInterceptor` 标记接口落在 starter-mybatis-plus 内做类型锚点（依赖倒置，mybatis-plus 不反向依赖 data-scope），保证分页 count SQL 带全部过滤条件。
+- 行级权限只保护读：INSERT/UPDATE/DELETE 不改写，写路径的数据归属由业务自身约束。
+- 28 个新测试（拦截器 10 + 切面 6 + 字段序列化 4 + ArchUnit 2 + H2 集成 6），全量构建全绿。
+
+### 联调验证
+
+- H2（MODE=MySQL）+ MyBatis-Plus 全链路集成测试 6 场景通过：`@DataScope` 行过滤、`@IgnoreDataScope` 豁免、无注解放行、空集返回空、多部门 IN 命中、Provider 返回 null 全量放行。
+
+### 注意事项
+
+1. **visibleIds 空集与 null 语义相反**：空集 = 看不到任何数据，null = 不限制。业务实现 `DataScopeProvider` 时「无权限」务必返回空集而非 null，写反等于放开全量数据。
+2. **嵌套 @DataScope 内层覆盖外层**：切面用线程栈保存外层现场，内层方法退出后外层条件自动恢复；方法退出（含异常）清理上下文，线程复用不串号。
+3. **字段裁剪必须每次 serialize 动态求值**：Jackson 缓存 BeanSerializer，`changeProperties` 静态裁剪会固化成首个请求的结果（P-026）。
+4. **继承 BaseMultiTableInnerInterceptor 必须补齐四个 process 方法**：基类默认抛 UnsupportedOperationException，参考 MP 官方 TenantLineInnerInterceptor 源码实现（P-023）。
+5. **jsqlparser 5.1 构造 IN 用 ParenthesedExpressionList**：直接传 ExpressionList 渲染无括号、SQL 语法错误（P-024）。
+6. **生产建议开 strict**：`baseon.data-scope.strict=true` 时未提供 DataScopeProvider 直接启动失败，避免权限体系漏配导致全量数据暴露。
+
+---
+
 ## [1.0.0-SNAPSHOT] · 补充：Swagger Servers 下拉显示服务名
 
 **日期**：2026-10-27

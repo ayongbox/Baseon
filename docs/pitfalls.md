@@ -268,3 +268,63 @@
 **解决**：`baseon-starter-tracing-otel` 聚合 `feign-micrometer`（版本由 spring-cloud BOM 经 feign-bom 管理，无需手写）；它是纯能力包不含 web 栈，不用 Feign 的服务引入后自动不生效。
 
 **规避**：验证分布式追踪链路时，必须对比「下游 span 的 traceId 是否等于上游」，仅看上游自身日志对齐不够。`traceparent` 格式为 `00-{traceId}-{spanId}-{flags}`，排查时可直接抓包看这个头有没有注入。
+
+---
+
+## P-023 · 继承 BaseMultiTableInnerInterceptor 必须自行实现四个 process 方法，基类默认抛 UOE
+
+**现象**：`DataScopeLineInnerInterceptor extends BaseMultiTableInnerInterceptor` 只重写了 `buildTableExpression`，一跑 `parserSingle` 就抛 `UnsupportedOperationException`。
+
+**根因**：`BaseMultiTableInnerInterceptor` 只提供多表处理骨架（抽象 `buildTableExpression`），`processSelect/processInsert/processUpdate/processDelete` 四个入口在基类里默认抛 UOE——它假设子类照搬 `TenantLineInnerInterceptor` 的完整实现。
+
+**解决**：解压本地 `mybatis-plus-jsqlparser-*-sources.jar` 参考 `TenantLineInnerInterceptor`，补齐四个 process 方法（行级权限只保护读，insert/update/delete 空实现；processSelect 里处理 Select body + WithItem 列表），`beforeQuery` 里调 `parserSingle` 改写 SQL。
+
+**规避**：继承 MP 多表拦截体系前先读官方 `TenantLineInnerInterceptor` 源码；单测入口用公共方法 `parserSingle(sql, null)`，别直接调 protected 的 processSelect（编译不过且绕过真实链路）。
+
+---
+
+## P-024 · jsqlparser 5.1 构造 IN 表达式必须用 ParenthesedExpressionList，否则渲染无括号
+
+**现象**：`new InExpression(column, expressionList)` 生成的 SQL 是 `DEPT_ID IN 20, 10`（无括号），数据库直接语法错误。
+
+**根因**：jsqlparser 5.x 中普通 `ExpressionList` 渲染时不自带括号；带括号的 IN 列表由 `ParenthesedExpressionList` 承载。
+
+**解决**：`new ParenthesedExpressionList<>(items)` 包装后再传给 `InExpression`；列名构造对齐 MP 官方 `getAliasColumn`——表无别名时返回裸列名，别强行拼表名前缀。
+
+**规避**：jsqlparser 版本升级后 AST 类形态会变（4.x 的 ExpressionList 泛型 → 5.x 的 ParenthesedExpressionList），升级后先跑一遍 SQL 改写单测再动其他逻辑；断言 IN 内容时别依赖 `Set.of` 的元素顺序（跨 JVM 不稳定），分别断言关键片段包含。
+
+---
+
+## P-025 · AOP 双切点 @annotation || @within 下注解参数会为 null
+
+**现象**：`@Around("@annotation(dataScope) || @within(dataScope)")` 写法下，只标类级注解的方法被切中时 `dataScope` 参数为 null，环绕通知里 NPE。
+
+**根因**：`@annotation` 绑方法级注解、`@within` 绑类级注解；两个切点或连接时，Spring 无法把注解实例绑定到统一参数，未命中的来源注入 null。
+
+**解决**：环绕方法不接收注解参数，改为手动解析——`MethodSignature.getMethod().getAnnotation()` 优先取方法级，miss 时回退 `signature.getDeclaringType().getAnnotation()` 取类级。注意 `getDeclaringType()` 返回原生 Class，getAnnotation 结果是原始 Annotation，需显式强转。
+
+**规避**：同一注解要同时支持方法级和类级时，固定用「无参 around + 手动 resolveAnnotation」模式；单测 mock ProceedingJoinPoint 时给 MethodSignature 配真实方法对象（FixtureClass 挂真实注解），别 mock getMethod 返回 null 埋雷。
+
+---
+
+## P-026 · Jackson 字段裁剪不能走 changeProperties：BeanSerializer 被缓存，裁剪结果固化到首个请求
+
+**现象**（设计期规避）：字段级数据权限若用 `BeanSerializerModifier.changeProperties` 按当前用户裁字段，该回调只在序列化器首次构建时执行一次——Jackson 全局缓存 BeanSerializer，后续请求复用，裁剪结果会固化成第一个请求用户的可见字段。
+
+**根因**：BeanSerializer 的构建（changeProperties）与使用（serialize）是两个阶段，构建结果按 Class 全局缓存；任何「随请求上下文变化」的裁剪都必须落在 serialize 阶段。
+
+**解决**：改用 `modifySerializer` 包装返回的 BeanSerializer——外层自定义 serializer 在每次 serialize 时读线程上下文（DataScopeContext + visibleFields），经委托对象的 `properties()` 迭代器逐字段判断后输出；无上下文时直接透传委托。
+
+**规避**：Jackson 定制凡依赖请求态（登录人/租户/权限）的逻辑，一律放 serialize 运行期求值；changeProperties 等构建期回调只能做与请求无关的静态裁剪。无 spring-web 依赖的模块注册定制走 Jackson 原生 `Module`（SimpleModule.setSerializerModifier），别引 Jackson2ObjectMapperBuilder。
+
+---
+
+## P-027 · 集成测试 schema.sql 被 spring.sql.init 与 @Sql 双重执行，数据翻倍断言全挂
+
+**现象**：SpringBootTest 集成测试查全表返回 8 行而预期 4 行——建表脚本里的种子 INSERT 跑了两遍。
+
+**根因**：`spring.sql.init.schema-locations` 已在应用上下文启动时执行过 schema.sql；测试类又加 `@Sql(scripts = "schema.sql", executionPhase = BEFORE_TEST_METHOD)`，每个用例前再执行一次，种子数据重复插入。
+
+**解决**：二选一——启动级初始化交给 `spring.sql.init.*`（删 `@Sql`），或只留 `@Sql` 关掉 spring.sql.init。
+
+**规避**：Boot 2.5+ 的 sql.init 与 `@Sql` 是两套独立机制、互不感知；集成测试看到「数据莫名翻倍 / 主键冲突」先查这两处是不是配重了。

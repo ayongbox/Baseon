@@ -4,8 +4,10 @@ import com.baomidou.mybatisplus.annotation.DbType;
 import com.baomidou.mybatisplus.autoconfigure.ConfigurationCustomizer;
 import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.handler.TenantLineHandler;
+import com.baomidou.mybatisplus.extension.plugins.inner.InnerInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.TenantLineInnerInterceptor;
+import io.github.ayongbox.baseon.starter.mybatisplus.interceptor.DataScopeInnerInterceptor;
 import io.github.ayongbox.baseon.starter.mybatisplus.interceptor.SlowSqlInterceptor;
 import org.mybatis.spring.SqlSessionFactoryBean;
 import org.springframework.beans.factory.ObjectProvider;
@@ -31,21 +33,32 @@ import java.util.function.BiConsumer;
 public class BaseonMybatisPlusAutoConfiguration {
 
     /**
-     * MP 内置插件总入口，InnerInterceptor 顺序固化：租户 → 分页。
+     * MP 内置插件总入口，InnerInterceptor 顺序固化：租户 → 数据权限 → 分页。
      *
      * <p>租户必须排在分页之前：分页插件会先执行 count 查询，若分页在前，
      * count SQL 尚未经过租户插件改写，统计结果会缺租户条件导致数据泄露。
+     * 数据权限同理排在分页之前；同时注入顺序固定为「先租户、后数据范围」，
+     * 避免条件顺序导致执行计划退化（租户列通常是联合索引前导列）。
      *
-     * <p>租户插件仅当容器中存在 {@link TenantLineHandler}（由 starter-tenant 提供）
-     * 时才加入，单库无租户场景不引入租户改写开销。
+     * <p>两个插件均以「可选标记接口」解耦：容器中存在 {@link TenantLineHandler}
+     * （starter-tenant 提供）时挂载租户插件；存在 {@code DataScopeLineInnerInterceptor}
+     * （starter-data-scope 提供）时挂载数据权限插件。两者都未引入时仅有分页，
+     * 零额外开销。为避免 ObjectProvider 泛型命中第三方 InnerInterceptor 造成
+     * 重复挂载，数据权限插件通过专属子接口 {@code DataScopeInnerInterceptor} 暴露。
      */
     @Bean
     @ConditionalOnMissingBean
-    public MybatisPlusInterceptor mybatisPlusInterceptor(ObjectProvider<TenantLineHandler> tenantLineHandlerProvider) {
+    public MybatisPlusInterceptor mybatisPlusInterceptor(
+            ObjectProvider<TenantLineHandler> tenantLineHandlerProvider,
+            ObjectProvider<DataScopeInnerInterceptor> dataScopeInterceptorProvider) {
         MybatisPlusInterceptor interceptor = new MybatisPlusInterceptor();
         TenantLineHandler tenantLineHandler = tenantLineHandlerProvider.getIfUnique();
         if (tenantLineHandler != null) {
             interceptor.addInnerInterceptor(new TenantLineInnerInterceptor(tenantLineHandler));
+        }
+        InnerInterceptor dataScopeInterceptor = dataScopeInterceptorProvider.getIfUnique();
+        if (dataScopeInterceptor != null) {
+            interceptor.addInnerInterceptor(dataScopeInterceptor);
         }
         interceptor.addInnerInterceptor(new PaginationInnerInterceptor(DbType.MYSQL));
         return interceptor;
