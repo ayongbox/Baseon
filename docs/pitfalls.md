@@ -328,3 +328,15 @@
 **解决**：二选一——启动级初始化交给 `spring.sql.init.*`（删 `@Sql`），或只留 `@Sql` 关掉 spring.sql.init。
 
 **规避**：Boot 2.5+ 的 sql.init 与 `@Sql` 是两套独立机制、互不感知；集成测试看到「数据莫名翻倍 / 主键冲突」先查这两处是不是配重了。
+
+---
+
+## P-028 · testcontainers 1.19.x 不提供独立 redis 模块，RedisContainer 无法解析
+
+**现象**：集成测试基类引 `org.testcontainers:redis` + `RedisContainer`，Maven 报 `'dependencies.dependency.version' for org.testcontainers:redis:jar is missing`，编译期 `RedisContainer` 找不到符号。
+
+**根因**：Spring Boot 3.2.x 托管的 testcontainers 1.19.8 BOM 只列了 `testcontainers`、`mysql`、`junit-jupiter` 等，未包含 `redis` 子构件（1.19 起 redis 容器不再作为独立模块发布）。
+
+**解决**：Redis 改用核心包的 `GenericContainer` 启动：`new GenericContainer<>("redis:7").withExposedPorts(6379)`，端口取 `getMappedPort(6379)`，无需额外依赖。
+
+**规避**：用 testcontainers 某中间件前先确认它在当前 BOM 版本里是否有独立模块；不在就用 `GenericContainer` + 官方镜像，核心包 `org.testcontainers:testcontainers` 始终由 BOM 托管。

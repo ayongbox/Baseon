@@ -36,6 +36,9 @@
         <module>baseon-starter-log</module>
         <module>baseon-starter-debug-tools</module>
         <module>baseon-starter-tracing-otel</module>
+        <!-- 测试基座：单元测试基类 + 集成测试基类（Testcontainers/H2） -->
+        <module>baseon-test-base-core</module>
+        <module>baseon-test-base-integration</module>
         <module>samples/demo-service</module>
         <module>samples/demo-service-b</module>
         <!-- 7 期：代码生成器 + 原型模板 + 网关示例 -->
@@ -116,6 +119,19 @@
                 <groupId>io.github.ayongbox</groupId>
                 <artifactId>baseon-core</artifactId>
                 <version>${revision}</version>
+            </dependency>
+            <!-- 测试基座：reactor 内构建用，外部业务工程走 baseon-bom（scope=test） -->
+            <dependency>
+                <groupId>io.github.ayongbox</groupId>
+                <artifactId>baseon-test-base-core</artifactId>
+                <version>${revision}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.github.ayongbox</groupId>
+                <artifactId>baseon-test-base-integration</artifactId>
+                <version>${revision}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>io.github.ayongbox</groupId>

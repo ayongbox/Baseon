@@ -5,6 +5,26 @@
 
 ---
 
+## [1.0.0-SNAPSHOT] · 10 期：测试基座（test-base-core + test-base-integration）
+
+**日期**：2026-10-31
+
+### 新增能力
+
+- `baseon-test-base-core`：单元测试基座，零 Spring 依赖。`BaseUnitTest` 基类 / `ContextCleanupExtension` 扩展在每个测试方法后统一清理 `SecurityUtil`、租户忽略、数据权限忽略、灰度标签四类线程上下文，消除手写 `@AfterEach`；`TestConstants` 提供默认租户/用户/traceId；`MockFactory` 快捷构造并写入 `LoginUser`。
+- `baseon-test-base-integration`：集成测试基座，提供两套基类——`BaseIntegrationTest`（Testcontainers 自动拉起 MySQL 8 + Redis 7，`@DynamicPropertySource` 注入 datasource/redis，容器 `withReuse` 共享）与 `H2IntegrationTest`（H2 内存库 `MODE=MySQL`，无 Docker 环境 / CI 快速跑）。Redis 用 `GenericContainer`（testcontainers 1.19.x 不再单独发布 redis 模块）。
+- 工程接线：根 POM `<modules>` 与 `<dependencyManagement>` 追加两模块；`baseon-bom` 已有对应条目无需改动。框架依赖（JUnit/Mockito/AssertJ/Spring Boot Test/Testcontainers/H2）均为 compile 范围，消费方 `scope=test` 依赖即可传递获得。
+- 4 个自测试（core 3 + integration 1），全量回归通过。
+
+### 注意事项
+
+1. **依赖 scope 必须是 test**：test-base 模块带 JUnit/Testcontainers，误设 compile 会把测试框架打进生产包。
+2. **`BaseIntegrationTest` 需要 Docker**：无 Docker 环境改用 `H2IntegrationTest`，否则容器启动失败。
+3. **存量测试无需迁移**：基座只提供默认能力，已手写 `@AfterEach` 的测试保持原样。
+4. **testcontainers 1.19.8 无独立 redis 模块**：Redis 容器用 `GenericContainer` 替代 `RedisContainer`（依赖核心包即可，版本由 BOM 托管）。
+
+---
+
 ## [1.0.0-SNAPSHOT] · 9 期：行列级数据权限（starter-data-scope）
 
 **日期**：2026-10-28
