@@ -25,6 +25,7 @@
         <module>baseon-starter-redis</module>
         <module>baseon-starter-cache</module>
         <module>baseon-starter-tenant</module>
+        <module>baseon-starter-data-scope</module>
         <module>baseon-starter-auth</module>
         <module>baseon-starter-xss</module>
         <module>baseon-starter-idempotent</module>
