@@ -5,6 +5,36 @@
 
 ---
 
+## [1.0.0-SNAPSHOT] · 16 期：分布式事务（S-23 starter-seata，可选）
+
+**日期**：2026-11-01
+
+### 新增能力
+
+- `baseon-starter-seata`（S-23 落地，可选装配）：Apache Seata 2.6.0（`org.apache.seata`，jakarta 线，兼容 Boot 3.2）官方 starter 的 baseon 封装。
+  - **统一配置入口**：`baseon.seata.*` 由 `BaseonSeataEnvironmentPostProcessor`（`spring.factories` 注册、`LOWEST_PRECEDENCE` 执行）映射为 Seata 原生 `seata.*`；只映射显式配置的 baseon 键，未配置项保持 Seata 自身取值；映射结果置最高优先级，与同名 `seata.*` 冲突时 baseon 键胜出。
+  - **模式推导**：`baseon.seata.mode=at` 自动打开数据源代理并锁定 `AT`；`mode=tcc` 自动关闭数据源代理（TCC 不需要代理）。
+  - **总开关**：`baseon.seata.enabled=false` 同步把 `seata.enabled` 置 false，Seata 的 TM/RM 装配整体失效；非法开关值或模式值启动即报。
+  - **编程式全局事务**：`SeataGlobalTransactionExecutor` 提供 `execute(name, Supplier)` / `execute(name, Runnable)`，覆盖跨线程、非 Spring Bean 等注解不生效的场景；事务失败回滚，业务 `BizException` 原样透传，其余异常包装为 `CommonErrorCode.SYSTEM_ERROR`；`TransactionalTemplate` 可被业务替换。
+  - 注解式 `@GlobalTransactional` 由 Seata 官方 `GlobalTransactionScanner` 提供，本 starter 不重复实现。
+- 工程接线：根 POM `<modules>` / `<seata.version>` / `<dependencyManagement>` 与 `baseon-bom` 同步新增。
+- 20 个新测试（属性映射 9 + 装配开关 4 + 执行器语义 5 + ArchUnit 2），全量回归 470 个测试全绿。
+
+### 影响面（业务升级须知）
+
+- 本模块**默认不引入**（demo/archetype 均未添加依赖）；跨库强一致事务成为必需时再引入，避免全局代理成本。
+
+### 注意事项
+
+1. **引入依赖即启用**：`baseon.seata.enabled` 默认 true；不需要分布式事务的服务不要加该依赖。
+2. **AT 自动代理与多数据源叠加有陷阱**：starter-datasource 的动态路由数据源会被整体代理成一个分支资源，多物理库场景下分支会共享同一 resourceId；需要按物理库单独注册 `DataSourceProxy`，或用 `seata.excludes-for-auto-proxying` 排除后再手工代理。
+3. **TCC 模式不代理数据源**：业务实现 `@TwoPhaseBusinessAction` 的 try/confirm/cancel 三方法，幂等与悬挂由业务兜底。
+4. **starter 不含 TC**：需自行部署 seata-server 并配置 `seata.registry.*` 与 `seata.service.vgroup-mapping`；`baseon.seata.tx-service-group` 必须与 TC 侧集群一致。
+5. **`@GlobalTransactional` 依赖代理**：同类内部调用、`private` 方法、跨线程调用均不生效，这些场景改用编程式执行器。
+6. **坐标迁移**（P-037）：Seata 2.1+ 的 Maven 坐标为 `org.apache.seata`，旧 `io.seata` 止于 2.0.0 且是 javax 线，Boot 3 必须用 `org.apache.seata` 2.x。
+
+---
+
 ## [1.0.0-SNAPSHOT] · 15 期：分库分表（S-10 starter-sharding）
 
 **日期**：2026-11-01

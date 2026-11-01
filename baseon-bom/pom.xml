@@ -93,6 +93,12 @@
                 <artifactId>baseon-starter-sharding</artifactId>
                 <version>${revision}</version>
             </dependency>
+            <!-- 16 期：分布式事务（可选，AT/TCC） -->
+            <dependency>
+                <groupId>io.github.ayongbox</groupId>
+                <artifactId>baseon-starter-seata</artifactId>
+                <version>${revision}</version>
+            </dependency>
             <dependency>
                 <groupId>io.github.ayongbox</groupId>
                 <artifactId>baseon-starter-mybatis-plus</artifactId>

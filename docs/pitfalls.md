@@ -442,3 +442,15 @@ new DefaultMQPushConsumer(group,
 **解决**：测试源内写一个实现 `java.sql.Driver` 的桩类（public 无参构造，全部方法返回兜底值），`driverClassName` 指向它——满足 Hikari 的加载+实例化校验，又不需要真实驱动与连接。见 `baseon-starter-datasource/src/test/.../config/StubDriver.java`。
 
 **规避**：凡在单测中构建 Hikari 池，二选一：① 引真实驱动的 test 依赖（如 H2）；② 桩 Driver。不要试图用 null/空串绕过 `setDriverClassName`，也不要假设「不拿连接就不会加载驱动」。
+
+---
+
+## P-037 · Seata 2.1+ 的 Maven 坐标迁到 `org.apache.seata`，旧 `io.seata` 止于 2.0.0 且是 javax 线
+
+**现象**：按旧知识引 `io.seata:seata-spring-boot-starter:2.1.0` 或更高版本，仓库解析报「Could not find artifact」；能拿到的 `io.seata` 最高只有 2.0.0（2023-11 停更）。
+
+**根因**：Seata 捐赠 Apache 基金会后，2.1.0 起 groupId 改为 `org.apache.seata`（incubating）；同时 2.x 产物已切到 **jakarta.servlet**（`SeataHttpAutoConfiguration` 引用 `jakarta.servlet.http.HttpServletRequest`），旧的 `io.seata` 2.0.0 仍是 javax 线，在 Boot 3 下装配不兼容。
+
+**解决**：Boot 3 工程一律使用 `org.apache.seata:seata-spring-boot-starter` 2.1.0+（本仓库锁定 2.6.0）。判定方法：`javap -cp <jar> ...SeataHttpAutoConfiguration | grep jakarta`，能命中 jakarta 即为 Boot 3 线；另确认 jar 内有 `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports`（Boot 3 只认这个，不认 `spring.factories` 里的自动配置）。
+
+**规避**：第三方坐标迁移类问题不要凭记忆选版本，先查 `maven-metadata.xml` 或 `javap`/`unzip -l` 实际产物再定版本；移植期最容易踩「group 变了」「javax→jakarta 了」两类。
