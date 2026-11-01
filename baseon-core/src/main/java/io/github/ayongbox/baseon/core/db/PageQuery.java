@@ -1,4 +1,4 @@
-package io.github.ayongbox.baseon.core.model;
+package io.github.ayongbox.baseon.core.db;
 
 /**
  * 分页请求基类：所有分页查询对象继承本类，禁止各自定义 pageNum / pageSize。

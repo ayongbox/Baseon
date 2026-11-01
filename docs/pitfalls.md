@@ -388,3 +388,15 @@
 **解决**：接入前在 Prometheus 查询 `count(http_server_requests_seconds_count)`、`count(jvm_memory_used_bytes)`、`count(baseon_mybatis_slowsql_total)`（慢 SQL 需 micrometer 注册表）确认有数据；再用 `promtool check rules` 与测试规则验证。
 
 **规避**：告警规则与指标暴露在同一次变更中评审；`docs/assets/alerting/README.md` 的阈值表与 Prometheus `/api/v1/targets` 页面应作为上线检查项。
+
+---
+
+## P-033 · 新模块只依赖 spring-boot 构件，编译报「程序包 org.slf4j 不存在」
+
+**现象**：新增 `baseon-core-launch` 只声明了 `spring-boot` / `spring-boot-autoconfigure`（optional），编译期 `LoggerFactory` / `Logger` 全部找不到符号。
+
+**根因**：`spring-boot` 构件本身**不传递** `slf4j-api`——Boot 的日志门面由 `spring-boot-starter-logging` 带入，而 starter 又由业务工程的 `spring-boot-starter-*` 传递。只依赖 `spring-boot` 的「轻量外置构件」类路径里没有 slf4j。
+
+**解决**：凡代码里使用 slf4j 的非 starter 模块，显式声明 `org.slf4j:slf4j-api`（optional，版本由 Boot BOM 管理），见 `baseon-core-launch/pom.xml`。
+
+**规避**：新建外置构件（core.* 物理外置、工具库）时按「编译期最小闭包」自查：spring-boot 不带 slf4j、spring-context 不带 spring-tx；缺的依赖一律 optional 显式声明，不依赖下游传递。

@@ -25,6 +25,7 @@ public class CrudRenderer {
 
     /** 内核实体父类包（生成代码依赖 baseon-core） */
     private static final String CORE_MODEL_PACKAGE = "io.github.ayongbox.baseon.core.model";
+    private static final String CORE_DB_PACKAGE = "io.github.ayongbox.baseon.core.db";
 
     /**
      * 渲染产物清单：模板名 + 输出子包 + 类名后缀。
@@ -120,7 +121,7 @@ public class CrudRenderer {
         switch (artifact) {
             case ENTITY -> {
                 imports.add("com.baomidou.mybatisplus.annotation.TableName");
-                imports.add(CORE_MODEL_PACKAGE + "." + (table.isTenantTable() ? "TenantEntity" : "BaseEntity"));
+                imports.add(CORE_DB_PACKAGE + "." + (table.isTenantTable() ? "TenantEntity" : "BaseEntity"));
                 imports.addAll(typeImports(table.getEntityColumns()));
             }
             case MAPPER -> {
@@ -129,8 +130,8 @@ public class CrudRenderer {
                 imports.add(rootPackage + ".entity." + entityName);
             }
             case SERVICE -> {
-                imports.add(CORE_MODEL_PACKAGE + ".PageResult");
-                imports.add(CORE_MODEL_PACKAGE + ".PageQuery");
+                imports.add(CORE_DB_PACKAGE + ".PageResult");
+                imports.add(CORE_DB_PACKAGE + ".PageQuery");
                 imports.add(rootPackage + ".req." + entityName + "Req");
                 imports.add(rootPackage + ".resp." + entityName + "Resp");
                 imports.add(rootPackage + ".vo." + entityName + "VO");
@@ -138,8 +139,8 @@ public class CrudRenderer {
             }
             case SERVICE_IMPL -> {
                 imports.add("com.baomidou.mybatisplus.extension.plugins.pagination.Page");
-                imports.add(CORE_MODEL_PACKAGE + ".PageResult");
-                imports.add(CORE_MODEL_PACKAGE + ".PageQuery");
+                imports.add(CORE_DB_PACKAGE + ".PageResult");
+                imports.add(CORE_DB_PACKAGE + ".PageQuery");
                 imports.add(rootPackage + ".converter." + entityName + "Converter");
                 imports.add(rootPackage + ".entity." + entityName);
                 imports.add(rootPackage + ".mapper." + entityName + "Mapper");
@@ -151,8 +152,8 @@ public class CrudRenderer {
                 imports.add("java.util.List");
             }
             case CONTROLLER -> {
-                imports.add(CORE_MODEL_PACKAGE + ".PageResult");
-                imports.add(CORE_MODEL_PACKAGE + ".PageQuery");
+                imports.add(CORE_DB_PACKAGE + ".PageResult");
+                imports.add(CORE_DB_PACKAGE + ".PageQuery");
                 imports.add(CORE_MODEL_PACKAGE + ".R");
                 imports.add(rootPackage + ".req." + entityName + "Req");
                 imports.add(rootPackage + ".resp." + entityName + "Resp");

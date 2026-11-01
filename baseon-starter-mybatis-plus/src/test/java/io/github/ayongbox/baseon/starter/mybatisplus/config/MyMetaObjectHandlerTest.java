@@ -2,9 +2,9 @@ package io.github.ayongbox.baseon.starter.mybatisplus.config;
 
 import io.github.ayongbox.baseon.core.context.SecurityUtil;
 import io.github.ayongbox.baseon.core.context.TenantIgnoreContext;
-import io.github.ayongbox.baseon.core.model.BaseEntity;
+import io.github.ayongbox.baseon.core.db.BaseEntity;
 import io.github.ayongbox.baseon.core.model.LoginUser;
-import io.github.ayongbox.baseon.core.model.TenantEntity;
+import io.github.ayongbox.baseon.core.db.TenantEntity;
 import org.apache.ibatis.reflection.SystemMetaObject;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;

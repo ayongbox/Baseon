@@ -19,7 +19,7 @@ docs/
 | 期 | 内容 | 状态 |
 |---|---|---|
 | 0 期 | 根 POM + BOM + demo 验证工程 | ✅ 完成 |
-| 1 期 | baseon-core（model / tool / context / spi）+ ArchUnit | ✅ 完成（db/launch 按需后补） |
+| 1 期 | baseon-core（model / tool / context / spi）+ ArchUnit | ✅ 完成 |
 | 2 期 | starter-web（异常、Jackson、上下文、日志、CORS）+ starter-trace（TraceId、MDC、异步透传） | ✅ 完成 |
 | 3 期 | starter-cloud-nacos + starter-cloud-feign + starter-loadbalance（注册发现、上下文透传、灰度路由） | ✅ 完成（`0d7426c`） |
 | 4 期 | starter-datasource + starter-mybatis-plus + starter-redis + starter-cache + starter-tenant | ✅ 完成（`4b230e6`，155 个单测全绿） |
@@ -31,6 +31,7 @@ docs/
 | 10 期 | 测试基座：baseon-test-base-core + baseon-test-base-integration | ✅ 完成（`2ab36b0`，单元/集成测试基类与 Context 清理） |
 | 11 期 | baseon-core-boot（SpringContextHolder / TransactionUtil / ThreadPoolFactory） | ✅ 完成（19 个新单测全绿，全量回归通过） |
 | 12 期 | 文档资产：CI 扫描/性能回归、容器化、告警规则、ADR | ✅ 完成（模板可复制即用，不参与 Maven 构建） |
+| 13 期 | core.db 迁移 + baseon-core-launch（启动校验/优雅停机/横幅） | ✅ 完成（403 个单测全绿，内核包全部落地） |
 
 ## 能力矩阵
 
@@ -38,14 +39,16 @@ docs/
 |---|---|---|
 | `baseon-parent` | revision 统一版本、flatten 展开、enforcer 构建约束 | ✅ 可用 |
 | `baseon-bom` | 依赖版本单一入口（供业务工程 import） | ✅ 可用 |
-| `baseon-core` · model | `R<T>`、`PageResult<T>`、`PageQuery`、错误码与 `ErrorType`、`BizException`、实体父类、`LoginUser` | ✅ 可用 |
+| `baseon-core` · model | `R<T>`、错误码与 `ErrorType`、`BizException`、`LoginUser` | ✅ 可用 |
 | `baseon-core` · tool | `StrUtil`、`MoneyUtil`、`BeanCopyUtil` | ✅ 可用 |
 | `baseon-core` · context | `SecurityUtil`、`ContextWrapper`、`GrayContext`、`TenantIgnoreContext`（编程式 API） | ✅ 可用 |
 | `baseon-core` · cloud | `CloudHeaders`（灰度/链路 Header 常量） | ✅ 可用 |
 | `baseon-core` · spi | `CacheKeyPrefixProvider` | ✅ 可用（按需扩展） |
 | `baseon-core` · annotation | `@IgnoreTenant`、`@IgnoreTenantCache`、`@RequiresPermission`、`@Idempotent`、`@Degrade`、`@OperateLog` | ✅ 可用 |
-| `baseon-core` · secure | `AuthProvider`、`PermissionChecker`、`CryptoService`、`SensitiveType` 契约 | ✅ 可用（db/launch 按需后补） |
+| `baseon-core` · secure | `AuthProvider`、`PermissionChecker`、`CryptoService`、`SensitiveType` 契约 | ✅ 可用 |
+| `baseon-core` · db | `PageQuery`、`PageResult<T>`、`BaseEntity`、`TenantEntity`（零 ORM 纯契约，13 期迁入） | ✅ 可用 |
 | `baseon-core-boot` | `SpringContextHolder`、`TransactionUtil`（REQUIRED/REQUIRES_NEW/NESTED + afterCommit/afterRollback）、`ThreadPoolFactory`（命名/拒绝策略/上下文透传/运行快照） | ✅ 可用 |
+| `baseon-core-launch` | `LaunchCheck` SPI 启动前置校验（fail-fast/必选配置硬约束）、`ShutdownHook` 优雅停机（异常隔离）、启动横幅 | ✅ 可用 |
 | `baseon-starter-web` | 全局异常、Jackson 统一、用户上下文、请求日志脱敏、CORS | ✅ 可用 |
 | `baseon-starter-trace` | TraceId、MDC、线程池/异步/定时任务透传、统一 logback 配置 | ✅ 可用 |
 | `baseon-starter-cloud-nacos` | 三档注册策略、ConfigHolder 免 @RefreshScope、Jasypt 加密 | ✅ 可用 |

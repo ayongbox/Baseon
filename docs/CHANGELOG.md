@@ -5,6 +5,38 @@
 
 ---
 
+## [1.0.0-SNAPSHOT] · 13 期：内核收口（core.db 迁移 + baseon-core-launch）
+
+**日期**：2026-11-01
+
+### 新增能力
+
+- `core.db` 落地：`PageQuery` / `PageResult` / `BaseEntity` / `TenantEntity` 从 `core.model` 迁入 `io.github.ayongbox.baseon.core.db`（`git mv` 保历史）。该包只放分页与持久化 PO 纯契约，ArchUnit 新增规则禁止其依赖 `tool` / `context` 与任何 ORM（MP、JPA），同时并入「零 Spring」规则。
+- `baseon-core-launch`：`core.launch` 逻辑包的物理构件，承载启动治理能力。
+  - `LaunchCheck` SPI + `LaunchCheckExecutor`：`ApplicationReadyEvent` 时统一执行全部检查，失败汇总为「名称： 原因」摘要；`baseon.launch.fail-fast`（默认 true）抛 `LaunchCheckException` 终止启动，`false` 降级 WARN（仅限本地联调）。
+  - `RequiredConfigurationCheck`：内置必选配置检查，`baseon.launch.required-properties` / `required-environment-variables` 缺失即启动失败，把「本服务依赖的外部配置」从文档约定变成硬约束。
+  - `ShutdownHook` SPI + `GracefulShutdownListener`：`ContextClosedEvent` 最高优先级统一执行停机钩子，单钩子异常隔离不影响其余。
+  - `BaseonBannerPrinter`：ASCII 横幅 + 应用名 / Boot / JDK 版本，走 `ApplicationRunner` 而非 `banner.txt`，不与业务横幅冲突。
+  - 整体开关 `baseon.launch.enabled`（默认 true），横幅独立开关 `baseon.launch.banner-enabled`；每个默认 Bean 均可被业务覆盖。
+- 工程接线：根 POM `<modules>` / `<dependencyManagement>` 与 `baseon-bom` 同步新增 `baseon-core-launch` 坐标。
+- 20 个新测试（执行器 5 + 必选配置 5 + 停机钩子 2 + 横幅 2 + 装配 4 + ArchUnit 2），全量回归 403 个测试全绿。
+
+### 影响面（业务升级须知）
+
+- `PageQuery` / `PageResult` / `BaseEntity` / `TenantEntity` 的**包名变更**：`core.model` → `core.db`。仓库内引用点（generator 常量、archetype 模板、mybatis-plus 测试）已全部同步；业务工程按 import 报错全局替换即可，类签名无任何变化。
+- `MyMetaObjectHandler` 走字符串反射填充公共字段，不直接引用实体类型，不受迁移影响。
+
+### 注意事项
+
+1. **`core.db` 只放纯契约**：新增持久化相关类型时禁止引入 ORM 注解与工具/上下文依赖，ArchUnit 会直接构建失败。
+2. **`LaunchCheck` 必须只读**：执行时机在启动阶段，写操作可能依赖未就绪的 Bean；初始化逻辑用 `ApplicationRunner`。
+3. **`fail-fast=false` 仅限本地联调**：生产关闭会让配置缺失的服务带病上线。
+4. **横幅不走 `banner.txt`**：避免覆盖业务自定义横幅；关闭用 `baseon.launch.banner-enabled=false`。
+5. **停机钩子清理线程池**：`ThreadPoolFactory` 创建的池非守护，业务必须在 `ShutdownHook` 中 `shutdown()`。
+6. **spring-boot 依赖为 optional**：不向下游强制传递；非 Boot 工程引入时自动装配不生效。
+
+---
+
 ## [1.0.0-SNAPSHOT] · 12 期：文档资产（docs/assets）
 
 **日期**：2026-11-01

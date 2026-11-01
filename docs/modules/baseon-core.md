@@ -8,9 +8,10 @@
 
 | 规则 | 说明 |
 |---|---|
-| 零 Spring 依赖 | `model` / `tool` / `context` 不得出现 `org.springframework.*` |
+| 零 Spring 依赖 | `model` / `tool` / `context` / `db` 不得出现 `org.springframework.*` |
 | 零反向依赖 | `core` 不得依赖 `baseon.starter.*`，依赖方向单向 |
 | model 最底层 | `model` 不得依赖 `tool` / `context` |
+| db 纯契约 | `db` 不得依赖 `tool` / `context` 与任何 ORM（MP、JPA） |
 
 编译期与运行期**零第三方依赖**（测试依赖除外），因此不引入 Jackson、Lombok、commons-lang3。
 
@@ -18,14 +19,14 @@
 
 | 包 | 职责 | 当前状态 |
 |---|---|---|
-| `core.model` | 返回体、分页、错误码与错误语义、异常、实体父类、登录用户 | ✅ |
+| `core.model` | 返回体、错误码与错误语义、异常、登录用户 | ✅ |
 | `core.tool` | 字符串、金额、Bean 拷贝 | ✅ |
 | `core.context` | 登录上下文存取与异步透传 | ✅ |
 | `core.boot` | 线程池工厂、事务模板、容器持有者（物理构件 `baseon-core-boot`） | ✅ |
 | `core.cloud` | 超时/灰度/租户 Header 常量与元数据抽象 | ✅ |
-| `core.db` | 分页查询、持久化 PO 契约（不含 ORM 依赖） | ⬜ |
+| `core.db` | 分页查询、分页结果、持久化 PO 父类（零 ORM 依赖） | ✅ |
 | `core.secure` | 认证/鉴权/加解密 SPI | ✅ |
-| `core.launch` | 启动前置校验、优雅停机钩子 | ⬜ |
+| `core.launch` | 启动前置校验、优雅停机钩子（物理构件 `baseon-core-launch`） | ✅ |
 | `core.spi` | 跨模块扩展点契约 | ✅ |
 | `core.annotation` | 跨模块通用注解（租户/鉴权/幂等/降级/审计） | ✅ |
 
@@ -41,7 +42,7 @@ public R<UserVO> detail(@PathVariable Long id) {
 
 @GetMapping("/page")
 public R<PageResult<UserVO>> page(UserQuery query) {
-    // UserQuery extends PageQuery，自带 current / size 与上限保护
+    // UserQuery extends PageQuery（core.db），自带 current / size 与上限保护
     return R.ok(userService.page(query));
 }
 ```
@@ -122,6 +123,7 @@ public class UserPO extends TenantEntity {
 }
 ```
 
+`BaseEntity` / `TenantEntity` 位于 `core.db`（13 期起），零 ORM 依赖；
 不需要租户隔离的表继承 `BaseEntity`，不要为了「统一」全部带 `tenantId`。
 
 `deleted`（逻辑删除标记）已在 `BaseEntity` 中定义，业务实体**禁止重复声明**；删除行为由 `starter-mybatis-plus` 统一拦截。
@@ -144,7 +146,7 @@ if (MoneyUtil.isZero(payable)) { ... }
 5. **`BaseEntity` 无 ORM 注解**：字段映射依赖 `map-underscore-to-camel-case` 约定，MyBatis-Plus 相关能力在 `starter-mybatis-plus`。
 6. **实例化即用**：`R` 是可变 POJO（提供 setter 供反序列化），不要把它当不可变值对象长期持有。
 7. **错误语义必须显式声明**：`ErrorCode#getType()` 默认 `SERVER_ERROR`，业务错误码不覆盖会被当作 500。
-8. **分页参数统一继承**：查询对象继承 `PageQuery`，`size` 超过 500 会被静默截断；大导出走独立接口。
+8. **分页参数统一继承**：查询对象继承 `core.db.PageQuery`，`size` 超过 500 会被静默截断；大导出走独立接口。
 9. **Supplier 用 `wrapSupplier`**：`wrap(Runnable)` / `wrap(Callable)` 之外的返回值包装必须用独立方法名，避免 lambda 重载歧义。
 
 ## 错误码规约
