@@ -22,7 +22,7 @@ class CoreArchitectureTest {
     @ArchTest
     static final ArchRule pure_kernel_should_not_depend_on_spring =
             noClasses()
-                    .that().resideInAnyPackage("..core.model..", "..core.tool..", "..core.context..", "..core.secure..")
+                    .that().resideInAnyPackage("..core.model..", "..core.tool..", "..core.context..", "..core.secure..", "..core.db..")
                     .should().dependOnClassesThat().resideInAnyPackage("org.springframework..")
                     .because("内核必须零 Spring 依赖，容器能力全部下沉到 Starter 层");
 
@@ -39,4 +39,12 @@ class CoreArchitectureTest {
                     .that().resideInAnyPackage("..core.model..")
                     .should().dependOnClassesThat().resideInAnyPackage("..core.tool..", "..core.context..")
                     .because("model 是最底层模型，不允许反向依赖工具与上下文");
+
+    @ArchTest
+    static final ArchRule db_should_not_depend_on_tool_or_orm =
+            noClasses()
+                    .that().resideInAnyPackage("..core.db..")
+                    .should().dependOnClassesThat().resideInAnyPackage(
+                            "..core.tool..", "..core.context..", "com.baomidou..", "jakarta.persistence..")
+                    .because("core.db 只放分页与持久化 PO 纯契约，不引入工具、上下文与任何 ORM 依赖");
 }

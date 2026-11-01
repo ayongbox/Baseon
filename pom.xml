@@ -17,6 +17,8 @@
         <module>baseon-core</module>
         <!-- 内核启动扩展：core.boot 需 Spring，物理上独立于零依赖的 baseon-core -->
         <module>baseon-core-boot</module>
+        <!-- 应用启动治理：启动校验 / 优雅停机 / 横幅（core.launch 的物理外置构件） -->
+        <module>baseon-core-launch</module>
         <module>baseon-starter-web</module>
         <module>baseon-starter-trace</module>
         <module>baseon-starter-cloud-nacos</module>
@@ -125,6 +127,11 @@
             <dependency>
                 <groupId>io.github.ayongbox</groupId>
                 <artifactId>baseon-core-boot</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.ayongbox</groupId>
+                <artifactId>baseon-core-launch</artifactId>
                 <version>${revision}</version>
             </dependency>
             <!-- 测试基座：reactor 内构建用，外部业务工程走 baseon-bom（scope=test） -->

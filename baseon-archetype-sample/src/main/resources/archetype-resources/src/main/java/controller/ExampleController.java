@@ -1,7 +1,7 @@
 package ${package}.controller;
 
-import io.github.ayongbox.baseon.core.model.PageQuery;
-import io.github.ayongbox.baseon.core.model.PageResult;
+import io.github.ayongbox.baseon.core.db.PageQuery;
+import io.github.ayongbox.baseon.core.db.PageResult;
 import io.github.ayongbox.baseon.core.model.R;
 import ${package}.service.ExampleService;
 import org.springframework.web.bind.annotation.GetMapping;

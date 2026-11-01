@@ -35,6 +35,12 @@
                 <artifactId>baseon-core-boot</artifactId>
                 <version>${revision}</version>
             </dependency>
+            <!-- 应用启动治理：启动前置校验 / 优雅停机钩子 / 启动横幅 -->
+            <dependency>
+                <groupId>io.github.ayongbox</groupId>
+                <artifactId>baseon-core-launch</artifactId>
+                <version>${revision}</version>
+            </dependency>
 
             <!-- ========== 测试基座（scope=test 使用） ========== -->
             <dependency>

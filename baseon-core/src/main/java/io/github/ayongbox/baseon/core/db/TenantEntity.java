@@ -1,4 +1,4 @@
-package io.github.ayongbox.baseon.core.model;
+package io.github.ayongbox.baseon.core.db;
 
 /**
  * 多租户实体父类：仅用于需要租户隔离的表。

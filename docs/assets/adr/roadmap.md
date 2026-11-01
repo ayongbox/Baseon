@@ -6,7 +6,7 @@
 
 - 版本：`1.0.0-SNAPSHOT`（`${revision}`）
 - 运行时：JDK 17 / Spring Boot 3.2.12 / Spring Cloud 2023.0.5 / MyBatis-Plus 3.5.9
-- 已交付：0~12 期（12 期为本文档资产，非 Maven 构件）
+- 已交付：0~13 期（12 期为本文档资产，非 Maven 构件）
 
 ## 已交付期次
 
@@ -25,6 +25,7 @@
 | 10 | test-base ×2 | 单元/集成测试基座 |
 | 11 | core-boot | 容器持有者、编程式事务、线程池工厂 |
 | 12 | docs/assets | CI、容器、告警、ADR 模板 |
+| 13 | core.db 迁移 + core-launch | 分页/PO 纯契约归位；启动校验、优雅停机、横幅 |
 
 ## 按需挂起项
 
@@ -37,7 +38,6 @@
 | `baseon-starter-seata` | 跨库强一致事务成为必需 | 默认不引入，避免全局代理成本 |
 | `baseon-starter-mq-*` | 需要统一 MQ 抽象 | 建议先做 RocketMQ，抽象先行 |
 | `baseon-starter-context-agent` | 遗留线程池无法统一改造 | TTL javaagent 默认关闭，风险需评估 |
-| `core.db` / `core.launch` | 出现稳定的通用需求 | 当前仍为规划态，不要引用 |
 
 ## 1.0.0 GA 出口条件
 

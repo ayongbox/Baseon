@@ -1,4 +1,4 @@
-package io.github.ayongbox.baseon.core.model;
+package io.github.ayongbox.baseon.core.db;
 
 import org.junit.jupiter.api.Test;
 

@@ -51,7 +51,7 @@ class CrudRendererTest {
         assertTrue(entity.content().contains("package com.example.demo.entity;"));
         assertTrue(entity.content().contains("@TableName(\"t_demo_user\")"));
         assertTrue(entity.content().contains("extends TenantEntity"));
-        assertTrue(entity.content().contains("import io.github.ayongbox.baseon.core.model.TenantEntity;"));
+        assertTrue(entity.content().contains("import io.github.ayongbox.baseon.core.db.TenantEntity;"));
         assertTrue(entity.content().contains("private String name;"));
         assertTrue(entity.content().contains("private BigDecimal balance;"));
         assertTrue(entity.content().contains("import java.math.BigDecimal;"));
@@ -75,7 +75,7 @@ class CrudRendererTest {
         GeneratedFile controller = renderByFileName(fakeTable(), new GeneratorContext("com.example.demo", null))
                 .get("DemoUserController.java");
         assertTrue(controller.content().contains("import io.github.ayongbox.baseon.core.model.R;"));
-        assertTrue(controller.content().contains("import io.github.ayongbox.baseon.core.model.PageResult;"));
+        assertTrue(controller.content().contains("import io.github.ayongbox.baseon.core.db.PageResult;"));
         assertTrue(controller.content().contains("@RequestMapping(\"/demo-users\")"));
         assertTrue(controller.content().contains("R<PageResult<DemoUserVO>> page(PageQuery query)"));
     }

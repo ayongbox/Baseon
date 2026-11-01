@@ -2,8 +2,8 @@ package ${package}.service;
 
 import io.github.ayongbox.baseon.core.model.BizException;
 import io.github.ayongbox.baseon.core.model.CommonErrorCode;
-import io.github.ayongbox.baseon.core.model.PageQuery;
-import io.github.ayongbox.baseon.core.model.PageResult;
+import io.github.ayongbox.baseon.core.db.PageQuery;
+import io.github.ayongbox.baseon.core.db.PageResult;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
