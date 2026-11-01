@@ -87,6 +87,12 @@
                 <artifactId>baseon-starter-datasource</artifactId>
                 <version>${revision}</version>
             </dependency>
+            <!-- 15 期：分库分表（ShardingSphere-JDBC 挂入动态路由表） -->
+            <dependency>
+                <groupId>io.github.ayongbox</groupId>
+                <artifactId>baseon-starter-sharding</artifactId>
+                <version>${revision}</version>
+            </dependency>
             <dependency>
                 <groupId>io.github.ayongbox</groupId>
                 <artifactId>baseon-starter-mybatis-plus</artifactId>

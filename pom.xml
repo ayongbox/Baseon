@@ -25,6 +25,8 @@
         <module>baseon-starter-cloud-feign</module>
         <module>baseon-starter-loadbalance</module>
         <module>baseon-starter-datasource</module>
+        <!-- 15 期：ShardingSphere-JDBC 装配为动态路由目标，依赖 starter-datasource 的 SPI -->
+        <module>baseon-starter-sharding</module>
         <module>baseon-starter-mybatis-plus</module>
         <module>baseon-starter-redis</module>
         <module>baseon-starter-cache</module>
@@ -80,6 +82,8 @@
         <!-- 14 期新增：RocketMQ 经典 remoting 客户端（兼容 4.9/5.x 服务端）与 MinIO S3 SDK -->
         <rocketmq.version>4.9.7</rocketmq.version>
         <minio.version>8.5.17</minio.version>
+        <!-- 15 期新增：ShardingSphere-JDBC，纯 JDBC 层分片，不侵入 MyBatis -->
+        <shardingsphere.version>5.5.2</shardingsphere.version>
 
         <flatten-maven-plugin.version>1.6.0</flatten-maven-plugin.version>
         <maven-enforcer-plugin.version>3.4.1</maven-enforcer-plugin.version>
@@ -181,6 +185,11 @@
             <dependency>
                 <groupId>io.github.ayongbox</groupId>
                 <artifactId>baseon-starter-datasource</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.ayongbox</groupId>
+                <artifactId>baseon-starter-sharding</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
@@ -369,6 +378,33 @@
                 <groupId>io.minio</groupId>
                 <artifactId>minio</artifactId>
                 <version>${minio.version}</version>
+            </dependency>
+
+            <!-- 15 期新增第三方：ShardingSphere-JDBC 单构件聚合全部规则引擎，无需按 feature 引包 -->
+            <dependency>
+                <groupId>org.apache.shardingsphere</groupId>
+                <artifactId>shardingsphere-jdbc</artifactId>
+                <version>${shardingsphere.version}</version>
+            </dependency>
+            <!--
+                shardingsphere(32.1.2) 与其传递的 calcite(33.3.0) 的 guava 分歧，锁定高版本收敛；
+                guava 向后兼容性强，升级对 shardingsphere 无影响
+            -->
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>33.3.0-jre</version>
+            </dependency>
+            <!-- 同上：caffeine(3.37.0) 与 calcite(3.43.0) 的纯注解包分歧，无运行时行为差异 -->
+            <dependency>
+                <groupId>org.checkerframework</groupId>
+                <artifactId>checker-qual</artifactId>
+                <version>3.43.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.errorprone</groupId>
+                <artifactId>error_prone_annotations</artifactId>
+                <version>2.28.0</version>
             </dependency>
 
             <!-- 构建期工具，仅 test scope 使用 -->
