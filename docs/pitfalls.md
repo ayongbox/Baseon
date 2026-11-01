@@ -430,3 +430,15 @@ new DefaultMQPushConsumer(group,
 ```
 
 **规避**：第三方客户端的构造器与实现类包路径以 `javap` / `unzip -l` 实际产物为准，官方文档与博客常滞后于版本；见 `MqConsumerRegistrar#createConsumer`。
+
+---
+
+## P-036 · HikariCP `setDriverClassName` 立即加载并实例化驱动类，单测无法脱离真实 JDBC 驱动
+
+**现象**：单测直接调用装配方法构建 `HikariDataSource`，classpath 上没有 MySQL 驱动时抛 `Failed to load driver class com.mysql.cj.jdbc.Driver`；把 `driverClassName` 置 null 绕过，又在 Hikari 内部 `ClassLoader.loadClass(null)` 处 NPE（`ConcurrentHashMap.putVal` 空 key）。
+
+**根因**：HikariCP 的 `HikariConfig#setDriverClassName` **不是纯 setter**——它会立即 `loadClass` 并 `getConstructor().newInstance()` 实例化驱动类做校验；传 null 时照样走 loadClass 流程导致 NPE。而无参 `new HikariDataSource()` 本身是 lazy 的，不触碰驱动。
+
+**解决**：测试源内写一个实现 `java.sql.Driver` 的桩类（public 无参构造，全部方法返回兜底值），`driverClassName` 指向它——满足 Hikari 的加载+实例化校验，又不需要真实驱动与连接。见 `baseon-starter-datasource/src/test/.../config/StubDriver.java`。
+
+**规避**：凡在单测中构建 Hikari 池，二选一：① 引真实驱动的 test 依赖（如 H2）；② 桩 Driver。不要试图用 null/空串绕过 `setDriverClassName`，也不要假设「不拿连接就不会加载驱动」。

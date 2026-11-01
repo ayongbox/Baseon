@@ -5,6 +5,37 @@
 
 ---
 
+## [1.0.0-SNAPSHOT] · 15 期：分库分表（S-10 starter-sharding）
+
+**日期**：2026-11-01
+
+### 新增能力
+
+- `baseon-starter-datasource` 新增扩展点 `RoutingDataSourceContributor`（support 包）：主库/从库装配完成后按序回调，向动态路由表追加数据源；无 contributor 时行为完全不变（向后兼容）。
+- `baseon-starter-sharding`（S-10 落地）：ShardingSphere-JDBC 5.5.2 基础装配，分片规则业务自定。
+  - 装配链：`baseon.sharding.datasources` 声明物理分片库（复用 starter-datasource 的连接/Hikari 池模型）→ 读取 `rules-location`（classpath:/file:）规则 YAML（只含 rules+props，物理数据源不进 YAML）→ `YamlShardingSphereDataSourceFactory` 聚合为逻辑数据源 → 经 `RoutingDataSourceContributor` 挂入动态路由表。
+  - 业务用法：分片表的 Mapper/Service 标注 `@DS("sharding")`（route-key 可配），与读写分离、@DS 切换同一条路由决策链。
+  - 生命周期收口：`ShardingRoutingDataSourceContributor` 实现 `DisposableBean`，容器关闭时先关 ShardingSphere 聚合数据源再关各物理 Hikari 池。
+  - 快速失败：datasources 为空、规则文件不存在、route-key 与已有路由 key 冲突均启动即报。
+  - 与 MyBatis-Plus 天然兼容：MP 插件链（租户→数据权限→分页）在 MyBatis 层执行，ShardingSphere 在 JDBC 层执行，租户列可直接作分片键。
+- 工程接线：根 POM `<modules>` / `<shardingsphere.version>` / `<dependencyManagement>` 与 `baseon-bom` 同步新增；guava 33.3.0-jre / checker-qual 3.43.0 / error_prone_annotations 2.28.0 锁定收敛（shardingsphere 与传递 calcite 的版本分歧）。
+- 9 个新测试（datasource SPI 2 + sharding 装配 4 + ArchUnit 2 + H2 双库分片端到端 1），集成测试验证 user_id 取模路由落位与跨库 COUNT 归并，全量回归 450 个测试全绿。
+
+### 影响面（业务升级须知）
+
+- `BaseonDatasourceAutoConfiguration#dataSource` 方法签名新增 `ObjectProvider<RoutingDataSourceContributor>` 参数（Spring 按类型注入，业务无感知）；未引入任何 contributor 时路由表与行为不变。
+
+### 注意事项
+
+1. **分片规则完全业务自定**：本 starter 只装配引擎不提供默认规则；表/库策略、广播表、绑定表写法见模块手册与 ShardingSphere 5.5.x 文档。
+2. **物理数据源名必须与 YAML 对齐**：`baseon.sharding.datasources` 的 key 即规则中 `actualDataNodes` 引用的 ds 名，错配启动失败。
+3. **分片表操作必须走 `@DS("sharding")`**：未标注的分片表 SQL 会落到 master 库报「表不存在」；非分片表禁止标 `@DS("sharding")`（规则引擎内无该表元数据）。
+4. **分布式主键自行选择**：规则 YAML 中配 `keyGenerateStrategy`（如 SNOWFLAKE），MP 的 `@TableId(type = ASSIGN_ID)` 也可生成，二者取其一，不要叠加。
+5. **跨分片事务不在本 starter 范围**：ShardingSphere-JDBC 的 XA/Seata 集成按需后续迭代；当前跨库写需业务保证最终一致性。
+6. **Hikari `setDriverClassName` 会立即加载并实例化驱动类**（P-036）：单测构建连接池需真实驱动或桩 Driver，不能传 null 绕过。
+
+---
+
 ## [1.0.0-SNAPSHOT] · 14 期：集成底座（MQ/OSS 抽象 + RocketMQ/MinIO 实现）
 
 **日期**：2026-11-01

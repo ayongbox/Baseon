@@ -4,6 +4,8 @@ import com.zaxxer.hikari.HikariDataSource;
 import io.github.ayongbox.baseon.starter.datasource.aspect.DataSourceSwitchAspect;
 import io.github.ayongbox.baseon.starter.datasource.aspect.ReadOnlyRouteAspect;
 import io.github.ayongbox.baseon.starter.datasource.support.DynamicRoutingDataSource;
+import io.github.ayongbox.baseon.starter.datasource.support.RoutingDataSourceContributor;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -36,7 +38,8 @@ public class BaseonDatasourceAutoConfiguration {
     @Bean
     @Primary
     @ConditionalOnProperty(name = "baseon.datasource.master.url")
-    public DataSource dataSource(BaseonDatasourceProperties properties) {
+    public DataSource dataSource(BaseonDatasourceProperties properties,
+                                 ObjectProvider<RoutingDataSourceContributor> contributors) {
         Map<Object, Object> targets = new HashMap<>();
         HikariDataSource master = buildDataSource(properties.getMaster(), properties.getHikari());
         targets.put(DynamicRoutingDataSource.MASTER, master);
@@ -48,6 +51,9 @@ public class BaseonDatasourceAutoConfiguration {
             targets.put(name, buildDataSource(slaves.get(i), properties.getHikari()));
             slaveNames.add(name);
         }
+
+        // 扩展点：如 starter-sharding 把 ShardingSphere 聚合数据源挂进路由表
+        contributors.orderedStream().forEach(contributor -> contributor.contribute(targets));
 
         DynamicRoutingDataSource routing = new DynamicRoutingDataSource(properties, slaveNames);
         routing.setTargetDataSources(targets);

@@ -1,0 +1,20 @@
+# 集成测试规则：t_order 按 user_id 取模分库（ds0/ds1），表名两库相同不再分表
+databaseName: sharding_it
+
+rules:
+  - !SHARDING
+    tables:
+      t_order:
+        actualDataNodes: ds$->{0..1}.t_order
+        databaseStrategy:
+          standard:
+            shardingColumn: user_id
+            shardingAlgorithmName: db_inline
+    shardingAlgorithms:
+      db_inline:
+        type: INLINE
+        props:
+          algorithm-expression: ds$->{user_id % 2}
+
+props:
+  sql-show: false
