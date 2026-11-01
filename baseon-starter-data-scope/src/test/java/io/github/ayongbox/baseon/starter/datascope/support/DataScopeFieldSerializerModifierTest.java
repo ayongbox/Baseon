@@ -2,7 +2,6 @@ package io.github.ayongbox.baseon.starter.datascope.support;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.ayongbox.baseon.core.spi.DataScopeProvider;
-import io.github.ayongbox.baseon.starter.datascope.support.DataScopeFieldSerializerModifier.DataScopeFilteringSerializer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 

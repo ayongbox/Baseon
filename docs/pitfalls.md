@@ -340,3 +340,15 @@
 **解决**：Redis 改用核心包的 `GenericContainer` 启动：`new GenericContainer<>("redis:7").withExposedPorts(6379)`，端口取 `getMappedPort(6379)`，无需额外依赖。
 
 **规避**：用 testcontainers 某中间件前先确认它在当前 BOM 版本里是否有独立模块；不在就用 `GenericContainer` + 官方镜像，核心包 `org.testcontainers:testcontainers` 始终由 BOM 托管。
+
+---
+
+## P-029 · DataSourceTransactionManager 默认不支持 NESTED：保存点事务抛 NestedTransactionNotSupportedException
+
+**现象**：调用 `TransactionUtil.executeInNestedTransaction(...)` 抛 `NestedTransactionNotSupportedException: Savepoint support not enabled`，而 REQUIRED / REQUIRES_NEW 正常。
+
+**根因**：Spring `DataSourceTransactionManager` 的 `nestedTransactionAllowed` 默认为 `false`，Boot 自动装配创建的事务管理器同样保持该默认值；NESTED 传播行为依赖 JDBC Savepoint，未显式放行时直接拒绝。
+
+**解决**：注册 `DataSourceTransactionManagerCustomizer<DataSourceTransactionManager>` 或自定义 `PlatformTransactionManager` Bean，调用 `setNestedTransactionAllowed(true)`；同时确认数据库与连接池支持 Savepoint（H2、MySQL + HikariCP 均支持）。
+
+**规避**：优先用 REQUIRES_NEW（独立事务）或业务补偿实现「局部失败不影响整体」；确实需要 Savepoint 语义时才开启 NESTED，并在使用该能力前验证底层驱动。

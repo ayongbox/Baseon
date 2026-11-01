@@ -5,6 +5,35 @@
 
 ---
 
+## [1.0.0-SNAPSHOT] · 11 期：内核启动扩展（baseon-core-boot）
+
+**日期**：2026-11-01
+
+### 新增能力
+
+- `baseon-core-boot`：`core.boot` 逻辑包的物理构件。`baseon-core` 由 ArchUnit 强制零 Spring 依赖，容器相关能力（容器持有者、编程式事务、线程池工厂）必须外置，包名仍为 `io.github.ayongbox.baseon.core.boot`。
+- `SpringContextHolder`：`ApplicationContextAware` 静态持有者，提供按类型/名称取 Bean、`getBeanOrNull` 可选获取、事件发布、活动 Profile 与配置读取；容器未就绪时除可选获取外统一抛 `IllegalStateException`，避免静态调用拿到 null 静默失败。
+- `TransactionUtil`：静态方法 / Lambda 场景的编程式事务模板。REQUIRED（加入或新建）、REQUIRES_NEW（挂起外层独立提交）、NESTED（保存点）三种传播行为，`afterCommit` / `afterRollback` 回调在无事务时立即执行；事务管理器按类型从容器获取。
+- `ThreadPoolFactory`：强制线程命名前缀的线程池统一创建入口，所有提交路径（`execute` / `submit` / `invokeAll` / 定时调度）自动经由 `ContextWrapper` 捕获并注入登录上下文；提供 ABORT / CALLER_RUNS / DISCARD / DISCARD_OLDEST 四种拒绝策略、`buildScheduled` 周期池与 `ThreadPoolStats` 运行快照（活跃数/队列/完成数），供日志与监控端点接入。
+- 工程接线：根 POM `<modules>` / `<dependencyManagement>` 与 `baseon-bom` 同步新增坐标；`BaseonCoreBootAutoConfiguration` 注册 `SpringContextHolder`，开关 `baseon.boot.enabled`（默认 true）。
+- 19 个新测试（容器持有 4 + 事务 6 + 线程池 7 + ArchUnit 2），全量回归通过。
+
+### 联调验证
+
+- H2 + `DataSourceTransactionManager` 真实事务链路 6 场景：提交后回调、运行时异常回滚、REQUIRES_NEW 外层回滚而内层保留、NESTED 内层回滚外层提交、`status.setRollbackOnly()` 回滚、无事务回调立即执行。
+- 线程池 7 场景：命名前缀、提交期上下文透传与工作线程清理、ABORT/CALLER_RUNS 拒绝行为、运行快照、定时任务命名与上下文、参数校验。
+
+### 注意事项
+
+1. **`baseon-core-boot` 与 `baseon-core` 是两个构件**：前者依赖 Spring（optional），后者保持零第三方依赖；业务查文档时按包名 `core.boot` 理解即可。
+2. **事务管理器必须唯一**：`TransactionUtil` 按类型取 `PlatformTransactionManager`，多数据源需用 `@Primary` 标默认管理器，否则首次调用抛 `NoUniqueBeanDefinitionException`。
+3. **受检异常默认不回滚**：与 `@Transactional` 默认一致；需要回滚时在回调内调用 `status.setRollbackOnly()`。
+4. **NESTED 需显式开启**：`DataSourceTransactionManager` 默认 `nestedTransactionAllowed=false`，未开启时抛 `NestedTransactionNotSupportedException`（P-029）。
+5. **线程池生命周期归调用方**：工厂只创建不托管，非守护线程会阻止 JVM 退出；上下文在提交（周期任务在调度）时捕获。
+6. **Spring 依赖为 optional**：不向下游强制传递；纯 Spring 工程使用 `TransactionUtil` 需自行保证 `spring-tx` 在类路径。
+
+---
+
 ## [1.0.0-SNAPSHOT] · 10 期：测试基座（test-base-core + test-base-integration）
 
 **日期**：2026-10-31
