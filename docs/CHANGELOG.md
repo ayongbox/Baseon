@@ -5,6 +5,37 @@
 
 ---
 
+## [1.0.0-SNAPSHOT] · 12 期：文档资产（docs/assets）
+
+**日期**：2026-11-01
+
+### 新增能力
+
+- `docs/assets/ci`：两个 GitLab CI 模板 + k6 脚本。`security-scan.gitlab-ci.yml` 用 Trivy 扫描 Maven 依赖漏洞、容器镜像漏洞与 K8s/Dockerfile 配置风险，输出 JSON/CycloneDX SBOM；`performance-regression.gitlab-ci.yml` 用恒定 VU 压测存活探针，P95、失败率、check 通过率任一不达标即失败。
+- `docs/assets/container`：JDK 17 多阶段 `Dockerfile`（非 root、容器感知堆参数、健康检查、`exec` 接管信号）；`docker-compose.yml` 编排 MySQL 8 / Redis 7 / Nacos 2.3 / demo-service，`monitoring` profile 追加 Prometheus 与 AlertManager；K8s 清单包含 ConfigMap、Secret 示例、Deployment（三类探针 + 滚动发布 + 优雅停机）、Service、HPA。
+- `docs/assets/alerting`：Prometheus 抓取配置、8 条告警规则（抓取失败、5xx 比例、P95、堆、GC、连接池等待/超时、慢 SQL）、AlertManager 按 severity 路由与同源抑制模板。
+- `docs/assets/adr`：ADR 模板与索引、5 条已采纳决策（revision/BOM、core 零 Spring、机制/策略 SPI、条件装配与生产硬失效、测试双轨）、版本 Roadmap、15 条反模式清单。
+- 全部为**非 Maven 资产**：不新增模块、不修改 POM，不参与 reactor 与 `mvn verify`。
+
+### 联调验证
+
+- 所有新增 YAML 文件通过 PyYAML 解析，YAML 内引用路径（`../alerting/*`、`dockerfile`、`perf/smoke.js`）与仓库实际结构一致；
+- 模板中的端口（demo-service 8091 / demo-service-b 8092 / gateway 8090）、actuator 端点、`baseon.*` 配置前缀与现有代码逐项核对；
+- 本迭代未实际拉起容器与 K8s 集群，模板定位为「复制后按环境替换占位值」，真实演练列入 1.0.0 GA 出口条件。
+
+### 注意事项
+
+1. **模板不要直接放仓库根**：`Dockerfile`、`.gitlab-ci.yml` 放在根目录会被平台自动识别并触发构建/流水线，保留在 `docs/assets` 下按需复制。
+2. **demo 未引入 `micrometer-registry-prometheus`**：`/actuator/prometheus` 当前不存在，直接启用 Prometheus 抓取会得到 404（P-032）。
+3. **接入 starter-auth 后探针会 401**：必须把 `/actuator/health`、`/actuator/health/liveness`、`/actuator/health/readiness` 放进 `baseon.auth.ignore-paths`（P-031）。
+4. **JVM 堆不要写死**：K8s 与 Docker 模板统一使用 `MaxRAMPercentage`，堆随 `limits.memory` 伸缩（P-030）。
+5. **Nacos 2.x 必须暴露 9848**：只映射 8848 会导致客户端 gRPC 连接失败，服务注册不上。
+6. **CI 模板不含真实凭据**：镜像地址、Nacos Token、AlertManager Webhook 均为占位值，接入时通过 CI/CD Variables 或 Secret 注入。
+7. **Trivy 原生 JSON 不是 GitLab Dependency Scanning 报告格式**：模板只归档产物，不挂 `reports.dependency_scanning`，避免平台解析失败。
+8. **本迭代无代码与测试变更**：全量回归结果沿用 11 期（`628d784`），无需重新跑 `clean verify`。
+
+---
+
 ## [1.0.0-SNAPSHOT] · 11 期：内核启动扩展（baseon-core-boot）
 
 **日期**：2026-11-01

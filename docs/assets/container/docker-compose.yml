@@ -1,0 +1,163 @@
+# Baseon 本地一键编排模板。
+#
+# 用法（在仓库根执行）：
+#   docker compose -f docs/assets/container/docker-compose.yml up -d --build
+#   docker compose -f docs/assets/container/docker-compose.yml --profile monitoring up -d
+#
+# 包含：MySQL 8（主从两个 schema 共用实例）、Redis 7、Nacos 2.3（standalone + 鉴权）、
+#       demo-service（镜像内多阶段构建）；monitoring profile 追加 Prometheus + AlertManager。
+# 所有密码与 Nacos Token 均为本地演示值，禁止复用到生产。
+
+name: baseon-local
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: baseon-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: baseon_master
+      TZ: Asia/Shanghai
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-time-zone=+08:00
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./mysql/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    logging: *default-logging
+
+  redis:
+    image: redis:7-alpine
+    container_name: baseon-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    logging: *default-logging
+
+  nacos:
+    image: nacos/nacos-server:v2.3.2
+    container_name: baseon-nacos
+    restart: unless-stopped
+    environment:
+      MODE: standalone
+      NACOS_AUTH_ENABLE: "true"
+      # 仅本地演示：32 字节以上的 Base64 字符串；生产由 KMS/Secret 注入
+      NACOS_AUTH_TOKEN: "SecretKey012345678901234567890123456789012345678901234567890123456789"
+      NACOS_AUTH_IDENTITY_KEY: baseon
+      NACOS_AUTH_IDENTITY_VALUE: baseon-local
+      JVM_XMS: 256m
+      JVM_XMX: 512m
+      JVM_XMN: 128m
+    ports:
+      - "8848:8848"
+      # Nacos 2.x 客户端走 gRPC 9848，不暴露会导致注册/配置读取失败
+      - "9848:9848"
+    volumes:
+      - nacos-data:/home/nacos/data
+    logging: *default-logging
+
+  demo-service:
+    build:
+      context: ../..
+      dockerfile: docs/assets/container/Dockerfile
+      args:
+        MODULE: samples/demo-service
+        SERVICE_PORT: "8091"
+    image: baseon/demo-service:local
+    container_name: baseon-demo-service
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      nacos:
+        condition: service_started
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      # 容器内服务名替代本地 127.0.0.1；其余配置由 application.yml 默认值兜底
+      SPRING_CLOUD_NACOS_SERVER_ADDR: nacos:8848
+      SPRING_CLOUD_NACOS_USERNAME: nacos
+      SPRING_CLOUD_NACOS_PASSWORD: nacos
+      SPRING_DATA_REDIS_HOST: redis
+      BASEON_DATASOURCE_MASTER_URL: "jdbc:mysql://mysql:3306/baseon_master?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai"
+      BASEON_DATASOURCE_SLAVES_0_URL: "jdbc:mysql://mysql:3306/baseon_slave?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai"
+      BASEON_AUTH_SECRET: "baseon-local-compose-secret-do-not-use-in-prod"
+      BASEON_AUTH_IGNORE_PATHS: "/auth/login,/auth/refresh,/actuator/health,/actuator/health/liveness,/actuator/health/readiness,/v3/api-docs/**,/swagger-ui/**,/debug/**"
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info,prometheus"
+      MANAGEMENT_ENDPOINT_HEALTH_PROBES_ENABLED: "true"
+      MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: "never"
+    ports:
+      - "8091:8091"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8091/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 6
+      start_period: 90s
+    logging: *default-logging
+
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    container_name: baseon-prometheus
+    restart: unless-stopped
+    profiles: ["monitoring"]
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=7d
+    ports:
+      - "9090:9090"
+    volumes:
+      - ../alerting/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ../alerting/prometheus-rules.yaml:/etc/prometheus/rules/baseon-rules.yaml:ro
+      - prometheus-data:/prometheus
+    depends_on:
+      - demo-service
+    logging: *default-logging
+
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    container_name: baseon-alertmanager
+    restart: unless-stopped
+    profiles: ["monitoring"]
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+      - --storage.path=/alertmanager
+    ports:
+      - "9093:9093"
+    volumes:
+      - ../alerting/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager-data:/alertmanager
+    logging: *default-logging
+
+volumes:
+  mysql-data:
+  redis-data:
+  nacos-data:
+  prometheus-data:
+  alertmanager-data:

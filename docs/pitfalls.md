@@ -352,3 +352,39 @@
 **解决**：注册 `DataSourceTransactionManagerCustomizer<DataSourceTransactionManager>` 或自定义 `PlatformTransactionManager` Bean，调用 `setNestedTransactionAllowed(true)`；同时确认数据库与连接池支持 Savepoint（H2、MySQL + HikariCP 均支持）。
 
 **规避**：优先用 REQUIRES_NEW（独立事务）或业务补偿实现「局部失败不影响整体」；确实需要 Savepoint 语义时才开启 NESTED，并在使用该能力前验证底层驱动。
+
+---
+
+## P-030 · 容器里写死 -Xmx，调整 limits 后堆不跟随导致 OOMKilled 或利用率虚低
+
+**现象**：K8s `limits.memory` 从 1Gi 调到 2Gi 后，Pod 仍按 512m 堆运行，容器内存利用率长期低于 50%；或反过来，镜像里固定 `-Xmx2g` 但 limit 只有 1Gi，Pod 被 OOMKilled 且 JVM 无堆 dump。
+
+**根因**：JVM 的容器感知只决定**默认**堆大小（`MaxRAMPercentage`，默认 25%），显式 `-Xmx` 会覆盖该计算；镜像、部署清单、启动脚本三处任一写死都会让堆与 limit 脱钩。
+
+**解决**：镜像与 K8s 统一使用 `-XX:MaxRAMPercentage=75.0 -XX:InitialRAMPercentage=25.0`，不写 `-Xmx`；`-XX:+ExitOnOutOfMemoryError` + `-XX:HeapDumpPath` 让 OOM 可观测。
+
+**规避**：见 `docs/assets/container/Dockerfile` 与 `k8s/deployment.yaml`；更换运行环境后先用 `java -XX:+PrintFlagsFinal -version | grep MaxHeapSize` 确认实际堆。
+
+---
+
+## P-031 · 接入 starter-auth 后 K8s 探针 401，Pod 反复重启
+
+**现象**：`/actuator/health` 在本地直接访问返回 200，部署到 K8s 后 readiness/liveness 持续失败，Pod 进入 `CrashLoopBackOff` 或不断被摘流；日志里没有业务异常，只有 401。
+
+**根因**：`baseon-starter-auth` 默认对除 `ignore-paths` 外的所有路径要求登录，`/actuator/**` 不在默认放行列表；探针不带 Token，因此每次请求都被拒绝。Docker `HEALTHCHECK`、k6 压测脚本同样受影响。
+
+**解决**：把探针路径加入 `baseon.auth.ignore-paths`（health、liveness、readiness 三个都要），或使用独立的未认证管理端口（`management.server.port`）并只在内网暴露；k6 的 `PERF_HEALTH_PATH` 指向放行后的路径。
+
+**规避**：新增任何探针/压测入口时，先确认它是否在 `ignore-paths` 里；见 `docs/assets/container/k8s/configmap.yaml`。
+
+---
+
+## P-032 · Prometheus 抓取成功但业务指标缺失，告警规则静默空转
+
+**现象**：告警规则上线后从未触发，`up{job="baseon-services"}` 一直为 1；人工制造 5xx 也没有告警，直到故障复盘才发现规则从未满足。
+
+**根因**：`up=1` 只代表抓取请求成功；若 `management.endpoints.web.exposure.include` 未包含 `prometheus`、未引入 `micrometer-registry-prometheus`，或指标名与实际不符，规则引用的序列根本不存在，PromQL 结果为空，告警永远不会进入 pending。
+
+**解决**：接入前在 Prometheus 查询 `count(http_server_requests_seconds_count)`、`count(jvm_memory_used_bytes)`、`count(baseon_mybatis_slowsql_total)`（慢 SQL 需 micrometer 注册表）确认有数据；再用 `promtool check rules` 与测试规则验证。
+
+**规避**：告警规则与指标暴露在同一次变更中评审；`docs/assets/alerting/README.md` 的阈值表与 Prometheus `/api/v1/targets` 页面应作为上线检查项。

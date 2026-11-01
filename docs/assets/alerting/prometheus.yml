@@ -1,0 +1,36 @@
+# Prometheus 抓取配置模板（Spring Boot 3 / Micrometer）。
+#
+# 前提：业务工程引入 micrometer-registry-prometheus，并暴露 actuator 端点：
+#   management.endpoints.web.exposure.include: health,info,prometheus
+# 接入 baseon-starter-auth 时需放行 /actuator/prometheus（否则抓取 401，up=0）。
+#
+# 生产环境优先用 Prometheus Operator 的 ServiceMonitor，本文件用于虚拟机 /
+# docker-compose / 单机 Prometheus。
+
+global:
+  scrape_interval: 15s
+  scrape_timeout: 10s
+  evaluation_interval: 30s
+  external_labels:
+    cluster: baseon-local
+
+rule_files:
+  - /etc/prometheus/rules/*.yaml
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - alertmanager:9093
+
+scrape_configs:
+  - job_name: baseon-services
+    metrics_path: /actuator/prometheus
+    scheme: http
+    # 服务实例静态列表；容器环境可用 dns_sd_configs 或 Kubernetes SD 动态发现
+    static_configs:
+      - targets:
+          - demo-service:8091
+        labels:
+          application: baseon-demo-service
+          env: local
