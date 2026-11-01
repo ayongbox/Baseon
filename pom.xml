@@ -27,6 +27,8 @@
         <module>baseon-starter-datasource</module>
         <!-- 15 期：ShardingSphere-JDBC 装配为动态路由目标，依赖 starter-datasource 的 SPI -->
         <module>baseon-starter-sharding</module>
+        <!-- 16 期：分布式事务（可选装配，AT/TCC，默认不引入） -->
+        <module>baseon-starter-seata</module>
         <module>baseon-starter-mybatis-plus</module>
         <module>baseon-starter-redis</module>
         <module>baseon-starter-cache</module>
@@ -84,6 +86,8 @@
         <minio.version>8.5.17</minio.version>
         <!-- 15 期新增：ShardingSphere-JDBC，纯 JDBC 层分片，不侵入 MyBatis -->
         <shardingsphere.version>5.5.2</shardingsphere.version>
+        <!-- 16 期新增：Apache Seata（2.1 起迁入 org.apache.seata，2.6.x 使用 jakarta，兼容 Boot 3） -->
+        <seata.version>2.6.0</seata.version>
 
         <flatten-maven-plugin.version>1.6.0</flatten-maven-plugin.version>
         <maven-enforcer-plugin.version>3.4.1</maven-enforcer-plugin.version>
@@ -190,6 +194,11 @@
             <dependency>
                 <groupId>io.github.ayongbox</groupId>
                 <artifactId>baseon-starter-sharding</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.ayongbox</groupId>
+                <artifactId>baseon-starter-seata</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
@@ -405,6 +414,13 @@
                 <groupId>com.google.errorprone</groupId>
                 <artifactId>error_prone_annotations</artifactId>
                 <version>2.28.0</version>
+            </dependency>
+
+            <!-- 16 期新增第三方：Apache Seata 官方 Boot starter（自带 TM/RM、数据源代理、配置加载） -->
+            <dependency>
+                <groupId>org.apache.seata</groupId>
+                <artifactId>seata-spring-boot-starter</artifactId>
+                <version>${seata.version}</version>
             </dependency>
 
             <!-- 构建期工具，仅 test scope 使用 -->
