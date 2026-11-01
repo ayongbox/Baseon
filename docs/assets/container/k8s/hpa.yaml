@@ -1,0 +1,37 @@
+# 需要集群已部署 metrics-server；没有指标时 HPA 会显示 unknown 并保持当前副本数。
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: baseon-demo-service
+  namespace: baseon
+  labels:
+    app.kubernetes.io/name: baseon-demo-service
+    app.kubernetes.io/part-of: baseon
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: baseon-demo-service
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 30
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 30
+    scaleDown:
+      # 缩短缩容避免抖动；有长连接/缓存预热时按业务调大
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 50
+          periodSeconds: 60

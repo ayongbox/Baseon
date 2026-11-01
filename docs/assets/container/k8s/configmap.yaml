@@ -1,0 +1,35 @@
+# 非敏感配置。敏感项（数据库密码、JWT 密钥、Nacos 密码）见 secret.example.yaml。
+# 注意：ConfigMap 的 key 必须能作为环境变量名，不能带点号（Spring 配置项的
+# 中划线在环境变量中一律写成下划线，由 Boot 的 relaxed binding 映射）。
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: baseon-demo-service
+  namespace: baseon
+  labels:
+    app.kubernetes.io/name: baseon-demo-service
+    app.kubernetes.io/part-of: baseon
+data:
+  SPRING_PROFILES_ACTIVE: "prod"
+  SERVER_PORT: "8091"
+
+  # 注册与配置中心
+  SPRING_CLOUD_NACOS_SERVER_ADDR: "nacos.infra:8848"
+  SPRING_CLOUD_NACOS_USERNAME: "nacos"
+
+  # 数据源：主库写入、从库只读轮询（baseon-starter-datasource）
+  BASEON_DATASOURCE_MASTER_URL: "jdbc:mysql://mysql.infra:3306/baseon_master?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai"
+  BASEON_DATASOURCE_SLAVES_0_URL: "jdbc:mysql://mysql.infra:3306/baseon_slave?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai"
+
+  # Redis 与缓存
+  SPRING_DATA_REDIS_HOST: "redis.infra"
+  SPRING_DATA_REDIS_PORT: "6379"
+
+  # 探针与指标。引入 micrometer-registry-prometheus 后 /actuator/prometheus 才存在
+  MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info,prometheus"
+  MANAGEMENT_ENDPOINT_HEALTH_PROBES_ENABLED: "true"
+  MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: "never"
+
+  # 接入 baseon-starter-auth 时放行探针与登录端点；未接入时该配置无副作用。
+  # 放行 /actuator/health 是 K8s 探针可用的前提（P-031）。
+  BASEON_AUTH_IGNORE_PATHS: "/actuator/health,/actuator/health/liveness,/actuator/health/readiness,/auth/login,/auth/refresh"

@@ -10,7 +10,8 @@ docs/
 ├── README.md             本文档：导航 + 当前能力矩阵
 ├── CHANGELOG.md          版本能力台账：每次迭代新增能力与注意事项
 ├── modules/              模块手册：一个模块一篇，记录用法、配置、边界
-└── pitfalls.md           工程踩坑记录：现象 / 根因 / 解决 / 规避
+├── pitfalls.md           工程踩坑记录：现象 / 根因 / 解决 / 规避
+└── assets/               交付模板：CI / 容器 / 告警 / ADR（非 Maven，不参与构建）
 ```
 
 ## 当前进度
@@ -29,6 +30,7 @@ docs/
 | 9 期 | starter-data-scope（`@DataScope` 行级数据权限 + 字段级脱敏） | ✅ 完成（`b2e2ead`，租户/数据范围插件顺序固定） |
 | 10 期 | 测试基座：baseon-test-base-core + baseon-test-base-integration | ✅ 完成（`2ab36b0`，单元/集成测试基类与 Context 清理） |
 | 11 期 | baseon-core-boot（SpringContextHolder / TransactionUtil / ThreadPoolFactory） | ✅ 完成（19 个新单测全绿，全量回归通过） |
+| 12 期 | 文档资产：CI 扫描/性能回归、容器化、告警规则、ADR | ✅ 完成（模板可复制即用，不参与 Maven 构建） |
 
 ## 能力矩阵
 
@@ -66,6 +68,7 @@ docs/
 | `baseon-starter-debug-tools` | `/debug/context`、`/debug/profiles`，生产三层硬失效 | ✅ 可用 |
 | `baseon-starter-tracing-otel` | OTel 分布式追踪接入（span 树/OTLP 上报/本地日志档），与 starter-trace 统一 traceId | ✅ 可用 |
 | `baseon-test-base-core` / `baseon-test-base-integration` | `BaseUnitTest`、`ContextCleanupExtension`、`TestConstants`、`MockFactory`；`BaseIntegrationTest`（MySQL+Redis）、`H2IntegrationTest` | ✅ 可用（scope=test） |
+| `docs/assets` · 交付模板 | GitLab 安全扫描/性能回归、Dockerfile/K8s/Compose、Prometheus/AlertManager、ADR/Roadmap/反模式 | ✅ 可复制使用（非 Maven） |
 | `baseon-generator-maven-plugin` | `mvn baseon:generate -Dtable=` 生成 CRUD 9 件套，core 纯库 + Mojo 薄壳 | ✅ 可用 |
 | `baseon-archetype-clean` / `baseon-archetype-sample` | 项目原型：空结构（迁移）/ 全景示例（新建），5 分钟起服务 | ✅ 可用 |
 | `samples/demo-gateway` | Spring Cloud Gateway 示例：Nacos 注册、discovery 路由、Swagger 聚合 UI | ✅ 可用（示例，不发布） |
@@ -77,4 +80,5 @@ docs/
 1. **同一次提交内必须同步**：新增/修改能力 → 更新 `CHANGELOG.md` + 对应 `modules/*.md`；
 2. **踩坑必记录**：调试中发现的非显而易见问题，沉淀到 `pitfalls.md`，编号递增；
 3. **文档只写当前事实**：不写「计划要做的能力」，计划类内容归入 `CHANGELOG` 的「待办」区；
-4. **示例可运行**：模块手册中的代码片段应能在 `samples/demo-service` 下直接编译通过。
+4. **示例可运行**：模块手册中的代码片段应能在 `samples/demo-service` 下直接编译通过；
+5. **交付模板同步**：端口、actuator 端点、配置前缀变更时，同提交更新 `assets/container` 与 `assets/alerting` 中的引用。

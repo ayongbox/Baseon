@@ -1,0 +1,50 @@
+# Baseon GitLab CI 模板：性能回归（k6 阈值卡点）
+#
+# 引入方式（业务工程根 .gitlab-ci.yml）：
+#   include:
+#     - local: 'ci/performance-regression.gitlab-ci.yml'
+#
+# 前提：被测服务已部署到 PERF_BASE_URL 可达的地址。MR 流水线通常部署到评审环境，
+# 主线流水线指向预发环境；不要指向生产（压测流量会污染业务指标与告警）。
+#
+# 卡点逻辑：k6 脚本内声明阈值（P95、失败率、check 通过率），任一阈值不满足
+# k6 以非 0 退出码结束，任务即失败。阈值通过环境变量注入，便于不同服务调整。
+
+stages:
+  - performance
+
+variables:
+  K6_IMAGE: grafana/k6:0.49.0
+  # 被测服务地址与探针路径（默认走 actuator 存活探针，避免压业务写接口）
+  PERF_BASE_URL: "http://127.0.0.1:8091"
+  PERF_HEALTH_PATH: "/actuator/health/liveness"
+  # 压测参数：PR 流水线宜小，夜间定时流水线再调大
+  PERF_VUS: "20"
+  PERF_DURATION: "60s"
+  PERF_P95_MS: "300"
+  PERF_FAIL_RATE: "0.01"
+  PERF_REPORT_DIR: reports/perf
+  # 脚本位置：仓库内复制本模板时保持不变；独立压测仓库可指向自有脚本
+  PERF_SCRIPT: ci/perf/smoke.js
+
+performance-regression:
+  stage: performance
+  image:
+    name: $K6_IMAGE
+    entrypoint: [""]
+  # 不使用 needs: []：必须等部署任务完成、PERF_BASE_URL 可达后再压测
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+  script:
+    - mkdir -p "$PERF_REPORT_DIR"
+    - >-
+      k6 run
+      --quiet
+      --summary-export "$PERF_REPORT_DIR/k6-summary.json"
+      "$PERF_SCRIPT"
+  artifacts:
+    when: always
+    expire_in: 30 days
+    paths:
+      - reports/perf/

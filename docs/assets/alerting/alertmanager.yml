@@ -1,0 +1,48 @@
+# AlertManager 路由模板（v0.27）。
+# 把 webhook 地址替换为实际接收端（企业微信/钉钉/飞书网关或自建告警服务）。
+# 生产建议按 severity 拆分接收人，并通过 inhibit_rules 避免同源重复告警。
+
+global:
+  resolve_timeout: 5m
+
+route:
+  receiver: default
+  group_by: [alertname, application, component]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  routes:
+    - matchers: ['severity="critical"']
+      receiver: critical
+      repeat_interval: 1h
+    - matchers: ['severity="warning"']
+      receiver: warning
+
+inhibit_rules:
+  # 服务整体不可用时，抑制同服务的其他告警，避免告警风暴
+  - source_matchers: ['alertname="BaseonServiceDown"']
+    target_matchers: ['severity="warning"']
+    equal: [application]
+
+receivers:
+  - name: default
+    webhook_configs:
+      - url: 'http://alert-webhook.example.com/baseon/default'
+        send_resolved: true
+
+  - name: critical
+    webhook_configs:
+      - url: 'http://alert-webhook.example.com/baseon/critical'
+        send_resolved: true
+    # 邮件通道示例（按需启用）：
+    # email_configs:
+    #   - to: 'oncall@example.com'
+    #     from: 'alertmanager@example.com'
+    #     smarthost: 'smtp.example.com:587'
+    #     auth_username: 'alertmanager@example.com'
+    #     auth_password_file: '/etc/alertmanager/smtp-password'
+
+  - name: warning
+    webhook_configs:
+      - url: 'http://alert-webhook.example.com/baseon/warning'
+        send_resolved: true

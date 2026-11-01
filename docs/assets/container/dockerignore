@@ -1,0 +1,19 @@
+# 复制到业务工程根目录并重命名为 .dockerignore（本文件留在 assets 下不会被 Docker 读取）。
+# 目的：减小构建上下文、避免把本地缓存与产物带进构建层。
+
+.git
+.gitlab
+.idea
+.vscode
+.trae
+.screenshots
+
+**/target
+**/.flattened-pom.xml
+**/*.log
+**/*.class
+
+.DS_Store
+docs
+落地模块清单.md
+通用SpringCloud企业微服务脚手架.md
