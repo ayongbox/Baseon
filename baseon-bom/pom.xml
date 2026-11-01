@@ -29,6 +29,12 @@
                 <artifactId>baseon-core</artifactId>
                 <version>${revision}</version>
             </dependency>
+            <!-- 内核启动扩展：容器持有者 / 编程式事务 / 线程池工厂 -->
+            <dependency>
+                <groupId>io.github.ayongbox</groupId>
+                <artifactId>baseon-core-boot</artifactId>
+                <version>${revision}</version>
+            </dependency>
 
             <!-- ========== 测试基座（scope=test 使用） ========== -->
             <dependency>

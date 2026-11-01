@@ -18,7 +18,7 @@ docs/
 | 期 | 内容 | 状态 |
 |---|---|---|
 | 0 期 | 根 POM + BOM + demo 验证工程 | ✅ 完成 |
-| 1 期 | baseon-core（model / tool / context / spi）+ ArchUnit | ✅ 完成（boot/db/secure/launch 按需后补） |
+| 1 期 | baseon-core（model / tool / context / spi）+ ArchUnit | ✅ 完成（db/launch 按需后补） |
 | 2 期 | starter-web（异常、Jackson、上下文、日志、CORS）+ starter-trace（TraceId、MDC、异步透传） | ✅ 完成 |
 | 3 期 | starter-cloud-nacos + starter-cloud-feign + starter-loadbalance（注册发现、上下文透传、灰度路由） | ✅ 完成（`0d7426c`） |
 | 4 期 | starter-datasource + starter-mybatis-plus + starter-redis + starter-cache + starter-tenant | ✅ 完成（`4b230e6`，155 个单测全绿） |
@@ -26,6 +26,9 @@ docs/
 | 6 期 | 通用工具批：starter-excel / swagger / log / debug-tools | ✅ 完成（255 个单测全绿，prod 硬失效已联调验证）；数据层深水批（S-10/S-11）与基础设施批（S-22~S-25）按需启动 |
 | 7 期 | generator 插件 + archetype×2 + demo-gateway + Swagger 聚合 + 全量 ArchUnit/Checkstyle | ✅ 完成（319 个单测全绿，verify 卡点生效，生成器/archetype/网关聚合均已实测） |
 | 8 期 | starter-tracing-otel（OTel 分布式追踪接入）+ starter-trace 协同改造 | ✅ 完成（327 个单测全绿，A→B 链路 traceId 四处一致实测通过） |
+| 9 期 | starter-data-scope（`@DataScope` 行级数据权限 + 字段级脱敏） | ✅ 完成（`b2e2ead`，租户/数据范围插件顺序固定） |
+| 10 期 | 测试基座：baseon-test-base-core + baseon-test-base-integration | ✅ 完成（`2ab36b0`，单元/集成测试基类与 Context 清理） |
+| 11 期 | baseon-core-boot（SpringContextHolder / TransactionUtil / ThreadPoolFactory） | ✅ 完成（19 个新单测全绿，全量回归通过） |
 
 ## 能力矩阵
 
@@ -39,7 +42,8 @@ docs/
 | `baseon-core` · cloud | `CloudHeaders`（灰度/链路 Header 常量） | ✅ 可用 |
 | `baseon-core` · spi | `CacheKeyPrefixProvider` | ✅ 可用（按需扩展） |
 | `baseon-core` · annotation | `@IgnoreTenant`、`@IgnoreTenantCache`、`@RequiresPermission`、`@Idempotent`、`@Degrade`、`@OperateLog` | ✅ 可用 |
-| `baseon-core` · secure | `AuthProvider`、`PermissionChecker`、`CryptoService`、`SensitiveType` 契约 | ✅ 可用（boot/db/launch 按需后补） |
+| `baseon-core` · secure | `AuthProvider`、`PermissionChecker`、`CryptoService`、`SensitiveType` 契约 | ✅ 可用（db/launch 按需后补） |
+| `baseon-core-boot` | `SpringContextHolder`、`TransactionUtil`（REQUIRED/REQUIRES_NEW/NESTED + afterCommit/afterRollback）、`ThreadPoolFactory`（命名/拒绝策略/上下文透传/运行快照） | ✅ 可用 |
 | `baseon-starter-web` | 全局异常、Jackson 统一、用户上下文、请求日志脱敏、CORS | ✅ 可用 |
 | `baseon-starter-trace` | TraceId、MDC、线程池/异步/定时任务透传、统一 logback 配置 | ✅ 可用 |
 | `baseon-starter-cloud-nacos` | 三档注册策略、ConfigHolder 免 @RefreshScope、Jasypt 加密 | ✅ 可用 |
@@ -50,6 +54,7 @@ docs/
 | `baseon-starter-redis` | key 规范校验、`RedisLock` 分布式锁、统一序列化 | ✅ 可用 |
 | `baseon-starter-cache` | L1 Caffeine + L2 Redis 两级缓存、三害防护、租户前缀 SPI | ✅ 可用 |
 | `baseon-starter-tenant` | 行级 SQL 过滤、缓存租户前缀、`@IgnoreTenant`/`@IgnoreTenantCache`、`TenantOps` 编程式 API | ✅ 可用 |
+| `baseon-starter-data-scope` | `@DataScope` 行级数据权限（JSqlParser 改写下推）、`@IgnoreDataScope` 豁免、字段级脱敏 | ✅ 可用 |
 | `baseon-starter-auth` | JWT 双 Token 签发/刷新/吊销（Redis 黑名单）、`@RequiresPermission` 方法级鉴权、AuthProvider 可整体替换 | ✅ 可用 |
 | `baseon-starter-xss` | 表单/请求头/JSON 全链路 HTML 转义、exclude-paths 例外通道 | ✅ 可用 |
 | `baseon-starter-sentinel` | BlockException 统一映射（429/1005、503/9003）、租户热点参数限流、规则 Nacos 持久化 | ✅ 可用 |
@@ -60,6 +65,7 @@ docs/
 | `baseon-starter-log` | `@OperateLog` 操作审计（操作人/租户/traceId/耗时/成败）、OperateLogHandler SPI | ✅ 可用 |
 | `baseon-starter-debug-tools` | `/debug/context`、`/debug/profiles`，生产三层硬失效 | ✅ 可用 |
 | `baseon-starter-tracing-otel` | OTel 分布式追踪接入（span 树/OTLP 上报/本地日志档），与 starter-trace 统一 traceId | ✅ 可用 |
+| `baseon-test-base-core` / `baseon-test-base-integration` | `BaseUnitTest`、`ContextCleanupExtension`、`TestConstants`、`MockFactory`；`BaseIntegrationTest`（MySQL+Redis）、`H2IntegrationTest` | ✅ 可用（scope=test） |
 | `baseon-generator-maven-plugin` | `mvn baseon:generate -Dtable=` 生成 CRUD 9 件套，core 纯库 + Mojo 薄壳 | ✅ 可用 |
 | `baseon-archetype-clean` / `baseon-archetype-sample` | 项目原型：空结构（迁移）/ 全景示例（新建），5 分钟起服务 | ✅ 可用 |
 | `samples/demo-gateway` | Spring Cloud Gateway 示例：Nacos 注册、discovery 路由、Swagger 聚合 UI | ✅ 可用（示例，不发布） |

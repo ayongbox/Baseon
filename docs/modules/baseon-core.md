@@ -21,12 +21,13 @@
 | `core.model` | 返回体、分页、错误码与错误语义、异常、实体父类、登录用户 | ✅ |
 | `core.tool` | 字符串、金额、Bean 拷贝 | ✅ |
 | `core.context` | 登录上下文存取与异步透传 | ✅ |
-| `core.boot` | 线程池工厂、事务模板、容器持有者 | ⬜ |
-| `core.cloud` | 超时/灰度/租户 Header 常量与元数据抽象 | ⬜ |
+| `core.boot` | 线程池工厂、事务模板、容器持有者（物理构件 `baseon-core-boot`） | ✅ |
+| `core.cloud` | 超时/灰度/租户 Header 常量与元数据抽象 | ✅ |
 | `core.db` | 分页查询、持久化 PO 契约（不含 ORM 依赖） | ⬜ |
-| `core.secure` | 认证/鉴权/加解密 SPI | ⬜ |
+| `core.secure` | 认证/鉴权/加解密 SPI | ✅ |
 | `core.launch` | 启动前置校验、优雅停机钩子 | ⬜ |
-| `core.spi` | 跨模块扩展点契约 | ⬜ |
+| `core.spi` | 跨模块扩展点契约 | ✅ |
+| `core.annotation` | 跨模块通用注解（租户/鉴权/幂等/降级/审计） | ✅ |
 
 ## 使用场景
 
@@ -102,6 +103,13 @@ CompletableFuture.runAsync(ContextWrapper.wrap(() -> {
 
 `ContextWrapper.wrap()` **必须在提交线程调用**，在子线程内部调用无效。
 
+自建线程池优先使用 `baseon-core-boot` 的 `ThreadPoolFactory`，它在提交时自动包装：
+
+```java
+ThreadPoolExecutor executor = ThreadPoolFactory.build("report-async", 4, 8, 256);
+executor.submit(() -> reportService.generate(SecurityUtil.getTenantId()));
+```
+
 `CompletableFuture.supplyAsync` 需要 `Supplier`，请使用 `ContextWrapper.wrapSupplier(...)`；Supplier 重载没有命名为 `wrap`，因为与 `wrap(Callable)` 存在 lambda 歧义。
 
 ### 场景 4：业务实体定义
@@ -132,7 +140,7 @@ if (MoneyUtil.isZero(payable)) { ... }
 1. **内核 POJO 命名**：非属性的判断方法不能用 `isXxx` / `getXxx`，Jackson 会把它当字段输出，而内核又不能加 `@JsonIgnore`。统一用 `success()` 这类非 getter 命名。
 2. **`BizException` 不带堆栈**：预期内业务失败按 WARN 打印即可；需要堆栈排障的场景属于系统异常。
 3. **`SecurityUtil` 只读**：写入与清理由 `starter-web` 的拦截器负责。业务自行 `set()` 会导致上下文错乱。
-4. **线程池必须包装**：手写线程池、`CompletableFuture` 必须显式 `ContextWrapper.wrap()`；框架托管线程池由 Starter 自动包装（2 期实现）。
+4. **线程池必须包装**：优先用 `ThreadPoolFactory`（`baseon-core-boot`，提交时自动包装）；手写线程池、`CompletableFuture` 必须显式 `ContextWrapper.wrap()`；框架托管线程池由 Starter 自动包装（2 期实现）。
 5. **`BaseEntity` 无 ORM 注解**：字段映射依赖 `map-underscore-to-camel-case` 约定，MyBatis-Plus 相关能力在 `starter-mybatis-plus`。
 6. **实例化即用**：`R` 是可变 POJO（提供 setter 供反序列化），不要把它当不可变值对象长期持有。
 7. **错误语义必须显式声明**：`ErrorCode#getType()` 默认 `SERVER_ERROR`，业务错误码不覆盖会被当作 500。

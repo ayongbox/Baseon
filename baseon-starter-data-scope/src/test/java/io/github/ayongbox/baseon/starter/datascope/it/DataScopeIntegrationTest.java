@@ -22,13 +22,13 @@ import static org.assertj.core.api.Assertions.assertThat;
  * </ul>
  */
 @SpringBootTest(classes = DataScopeItConfig.class, properties = {
-        "spring.datasource.url=jdbc:h2:mem:datascope_it;MODE=MySQL;DB_CLOSE_DELAY=-1",
-        "spring.datasource.driver-class-name=org.h2.Driver",
-        "spring.datasource.username=sa",
-        "spring.datasource.password=",
-        "spring.sql.init.mode=always",
-        "spring.sql.init.schema-locations=classpath:schema.sql",
-        "mybatis-plus.configuration.log-impl=org.apache.ibatis.logging.nologging.NoLoggingImpl"
+    "spring.datasource.url=jdbc:h2:mem:datascope_it;MODE=MySQL;DB_CLOSE_DELAY=-1",
+    "spring.datasource.driver-class-name=org.h2.Driver",
+    "spring.datasource.username=sa",
+    "spring.datasource.password=",
+    "spring.sql.init.mode=always",
+    "spring.sql.init.schema-locations=classpath:schema.sql",
+    "mybatis-plus.configuration.log-impl=org.apache.ibatis.logging.nologging.NoLoggingImpl"
 })
 class DataScopeIntegrationTest {
 
