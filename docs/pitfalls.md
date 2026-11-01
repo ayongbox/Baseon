@@ -400,3 +400,33 @@
 **解决**：凡代码里使用 slf4j 的非 starter 模块，显式声明 `org.slf4j:slf4j-api`（optional，版本由 Boot BOM 管理），见 `baseon-core-launch/pom.xml`。
 
 **规避**：新建外置构件（core.* 物理外置、工具库）时按「编译期最小闭包」自查：spring-boot 不带 slf4j、spring-context 不带 spring-tx；缺的依赖一律 optional 显式声明，不依赖下游传递。
+
+---
+
+## P-034 · rocketmq-client 不传递 rocketmq-acl，ACL 编译报「程序包 org.apache.rocketmq.acl 不存在」
+
+**现象**：只声明了 `rocketmq-client`，使用 `AclClientRPCHook` / `SessionCredentials` 时编译找不到 `org.apache.rocketmq.acl.common` 包；按旧记忆从 `org.apache.rocketmq.remoting.common` import `SessionCredentials` 同样失败。
+
+**根因**：`rocketmq-acl` 是**独立构件**，`rocketmq-client`（4.9.7）的 pom 只传递 rocketmq-common / commons-lang3 / opentracing，ACL 支持必须单独声明；且 4.x 起 `SessionCredentials` 在 `org.apache.rocketmq.acl.common` 包，不在 remoting 包。
+
+**解决**：显式声明 `org.apache.rocketmq:rocketmq-acl`（本仓库版本由父 POM `rocketmq.version` 统一管控），import 使用 `org.apache.rocketmq.acl.common.AclClientRPCHook` / `SessionCredentials`，见 `baseon-starter-mq-rocketmq/pom.xml`。
+
+**规避**：接入第三方客户端的「可选增强能力」（ACL、tracing 插件等）时，先 `mvn dependency:tree` 确认该能力构件是否真在传递闭包内，不要凭主构件存在推断。
+
+---
+
+## P-035 · DefaultMQPushConsumer 开 ACL 报「找不到构造器」，AllocateMessageQueueAveragely 导包错误
+
+**现象**：按直觉写 `new DefaultMQPushConsumer(group, new AclClientRPCHook(...))` 编译失败，javap 确认 4.9.7 无 `(String, RPCHook)` 两参构造器；补负载策略时从 `org.apache.rocketmq.client.consumer` 包 import `AllocateMessageQueueAveragely` 也找不到。
+
+**根因**：RocketMQ 4.9.7 的 `DefaultMQPushConsumer` 开启 ACL 必须用三参构造器 `(String group, RPCHook, AllocateMessageQueueStrategy)`；且 `AllocateMessageQueueAveragely` **实现类**在 `org.apache.rocketmq.client.consumer.rebalance` 包，只有 `AllocateMessageQueueStrategy` 接口在 `consumer` 包。
+
+**解决**：
+
+```java
+new DefaultMQPushConsumer(group,
+        new AclClientRPCHook(new SessionCredentials(ak, sk)),
+        new AllocateMessageQueueAveragely())   // import 自 consumer.rebalance 包
+```
+
+**规避**：第三方客户端的构造器与实现类包路径以 `javap` / `unzip -l` 实际产物为准，官方文档与博客常滞后于版本；见 `MqConsumerRegistrar#createConsumer`。

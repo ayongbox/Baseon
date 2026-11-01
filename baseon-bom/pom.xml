@@ -162,6 +162,17 @@
                 <artifactId>baseon-starter-tracing-otel</artifactId>
                 <version>${revision}</version>
             </dependency>
+            <!-- 14 期：MQ/OSS 抽象的默认实现 -->
+            <dependency>
+                <groupId>io.github.ayongbox</groupId>
+                <artifactId>baseon-starter-mq-rocketmq</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.ayongbox</groupId>
+                <artifactId>baseon-starter-oss-minio</artifactId>
+                <version>${revision}</version>
+            </dependency>
 
             <!-- 新增 Starter 时在此追加，与仓库模块同步维护 -->
 

@@ -5,6 +5,41 @@
 
 ---
 
+## [1.0.0-SNAPSHOT] · 14 期：集成底座（MQ/OSS 抽象 + RocketMQ/MinIO 实现）
+
+**日期**：2026-11-01
+
+### 新增能力
+
+- `core.spi` MQ 抽象契约：`MqMessage`（topic/tag/key/body/headers，登录上下文头常量收口）、`MqProducer`（send/sendAsync/sendOneway/sendDelay）、`MqConsumerListener` + `ConsumeResult`（SUCCESS/RETRY）、`SendCallback`；`core.annotation` 新增 `@MqListener`（topic/consumerGroup/tags）。
+- `core.spi` OSS 抽象契约：`ObjectStorageService`（upload/download/delete/exists/presignedUrl，bucket 传 null 走默认桶）、`ObjectInfo`。
+- `baseon-starter-mq-rocketmq`（S-24 RocketMQ 实现落地，抽象先行）：
+  - 生产者：`DefaultMQProducer` 装配 + `RocketMqProducerAdapter` 实现 `MqProducer`，失败统一 `BizException(REMOTE_CALL_FAILED)`；`sendDelay` 就近向上映射 4.9.x 固定 18 级延迟。
+  - 消费者：`MqConsumerRegistrar` 扫描 `MqConsumerListener` Bean + `@MqListener` 注解（缺注解启动失败），单条消费，RETRY/异常 → `RECONSUME_LATER`。
+  - 消费幂等：引入 starter-redis 时自动生效，`mq:idem:` + 租户前缀 + 业务 key（空用 msgId），窗口默认 24h 覆盖 16 次重投全周期。
+  - 登录上下文透传：发送时注入 userId/tenantId/username 到消息头，消费前恢复 `SecurityUtil`，finally 清理。
+  - ACL：accessKey/secretKey 成对配置；客户端为 RocketMQ 4.9.7 经典 remoting 版，兼容 4.9/5.x 服务端。
+- `baseon-starter-oss-minio`（计划外增补）：MinIO SDK 8.5.17 实现 `ObjectStorageService`；S3 协议即聚合层，AWS S3/阿里云 OSS/腾讯 COS/华为 OBS 换 endpoint/凭据即用；download 不存在抛 `BizException(NOT_FOUND)`，流式上传按 -1 + 10MiB 分片。
+- 装配降级链：未配 `name-server`/`endpoint` 整体不装配；未引 starter-redis 消费幂等自动跳过；所有默认 Bean 均可被业务覆盖。
+- ArchUnit：`CoreArchitectureTest` 零 Spring 规则包列表扩为 8 个（新增 `core.annotation`/`core.cloud`/`core.spi`）；两个新 starter 各自闭环依赖规则。
+- 38 个新测试（MQ 23 + OSS 15），全量回归 441 个测试全绿。
+
+### 影响面（业务升级须知）
+
+- core 仅新增纯契约类，无破坏性变更；`CoreArchitectureTest` 零 Spring 规则收紧到 8 个包，仓库内自建模块若在 `core.annotation`/`core.cloud`/`core.spi` 引入 Spring 会构建失败（现有代码无此情况）。
+
+### 注意事项
+
+1. **`rocketmq-acl` 是独立构件**：`rocketmq-client` 不传递，ACL 场景必须显式声明（父 POM 已管控版本，P-034）。
+2. **PushConsumer 开 ACL 必须三参构造器**：4.9.7 无 `(String, RPCHook)` 两参版，且 `AllocateMessageQueueAveragely` 在 `consumer.rebalance` 包（P-035）。
+3. **延迟消息是固定级别映射**：18 级（1s~2h）就近向上，不是任意毫秒精度；精确定时走调度任务。
+4. **消费幂等依赖共享 Redis**；业务 key 才是跨重投稳定标识（msgId 兜底只覆盖 Broker 重投），有天然业务键务必设置。
+5. **同步发送失败即抛异常不重试**：需要重试语义走 `sendAsync` 回调补偿，或上游本地消息表兜底。
+6. **`auto-create-bucket` 仅限联调**：生产桶由运维预创建并授权；预签名 URL 有效期按业务最小化。
+7. **厂商切换只改配置**：endpoint/region/凭据三要素；归档存储等厂商特性不在抽象契约内，业务可覆盖默认 Bean 扩展。
+
+---
+
 ## [1.0.0-SNAPSHOT] · 13 期：内核收口（core.db 迁移 + baseon-core-launch）
 
 **日期**：2026-11-01

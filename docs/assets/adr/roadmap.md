@@ -6,7 +6,7 @@
 
 - 版本：`1.0.0-SNAPSHOT`（`${revision}`）
 - 运行时：JDK 17 / Spring Boot 3.2.12 / Spring Cloud 2023.0.5 / MyBatis-Plus 3.5.9
-- 已交付：0~13 期（12 期为本文档资产，非 Maven 构件）
+- 已交付：0~14 期（12 期为本文档资产，非 Maven 构件）
 
 ## 已交付期次
 
@@ -26,6 +26,7 @@
 | 11 | core-boot | 容器持有者、编程式事务、线程池工厂 |
 | 12 | docs/assets | CI、容器、告警、ADR 模板 |
 | 13 | core.db 迁移 + core-launch | 分页/PO 纯契约归位；启动校验、优雅停机、横幅 |
+| 14 | MQ/OSS 抽象 + RocketMQ/MinIO 实现 | core.spi 统一契约；生产/消费/幂等/上下文透传；S3 兼容对象存储 |
 
 ## 按需挂起项
 
@@ -36,7 +37,7 @@
 | `baseon-starter-sharding` | 单表容量或分片需求明确 | 依赖 `starter-mybatis-plus`，分片规则业务自定 |
 | `baseon-starter-kms` | 需要 KMS/Vault 托管密钥与证书轮换 | 与 `core.secure.CryptoService` 契约配合 |
 | `baseon-starter-seata` | 跨库强一致事务成为必需 | 默认不引入，避免全局代理成本 |
-| `baseon-starter-mq-*` | 需要统一 MQ 抽象 | 建议先做 RocketMQ，抽象先行 |
+| `baseon-starter-mq-{kafka,rabbitmq}` | RocketMQ 之外的 MQ 实现成为必需 | 14 期已交付 RocketMQ 实现与 core.spi 抽象，新实现只需实现契约并装配 |
 | `baseon-starter-context-agent` | 遗留线程池无法统一改造 | TTL javaagent 默认关闭，风险需评估 |
 
 ## 1.0.0 GA 出口条件
