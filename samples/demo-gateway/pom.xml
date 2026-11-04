@@ -35,6 +35,24 @@
             <groupId>com.alibaba.cloud</groupId>
             <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
         </dependency>
+        <!--
+            网关链路追踪（WebFlux 线）：Spring Boot 原生支持，无需 baseon-starter-tracing-otel
+            （那是 webmvc 线）。actuator 带入 webflux observation filter，
+            micrometer-tracing-bridge-otel 把 span 落到 OTel SDK，opentelemetry-exporter-otlp
+            经 OTLP 上报。Boot 自动装配，网关每跳转发生成 span 并透传 W3C traceparent。
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-tracing-bridge-otel</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-exporter-otlp</artifactId>
+        </dependency>
         <!-- Swagger UI 聚合展示（WebFlux 线），版本由父 POM 锁定，与 webmvc 线严格一致 -->
         <dependency>
             <groupId>org.springdoc</groupId>

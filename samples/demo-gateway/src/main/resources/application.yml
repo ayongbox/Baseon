@@ -46,6 +46,18 @@ spring:
     import:
       - optional:nacos:demo-gateway.yaml
 
+# 网关链路追踪（WebFlux 线）：与业务服务统一走 OTLP 上报，
+# 确保网关→业务服务→下游的 traceId 连续，链路在追踪后端完整可见。
+management:
+  tracing:
+    enabled: true
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: http://localhost:4318
+      enabled: false        # 本地无 collector/SkyWalking 时关闭，避免连接重试噪音
+
 # 网关聚合模式：保留 swagger-ui 承载各服务文档的下拉列表。
 # 注意：不要配置 springdoc.api-docs.enabled=false——webflux 线的 UI 自动配置
 #（SwaggerUiConfigProperties 等 Bean）整体受 api-docs 开关门控，关掉后 swagger-ui 也无法启动。
