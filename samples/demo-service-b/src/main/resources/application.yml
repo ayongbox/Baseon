@@ -39,10 +39,11 @@ baseon:
     version: 1.0.0-SNAPSHOT
 
 # 7 期：Swagger 网关聚合场景，业务服务只保留 /v3/api-docs 端点供网关拉取，
-# UI 统一收敛到网关（demo-gateway:8090），本服务不再单独暴露 swagger-ui
+# 17 期起：业务服务使用 Knife4j（/doc.html）作为文档 UI，swagger-ui 须开启
+# （Knife4j 4.x 依赖 /v3/api-docs/swagger-config 端点定位文档）。
 springdoc:
   swagger-ui:
-    enabled: false
+    enabled: true
 
 logging:
   level:

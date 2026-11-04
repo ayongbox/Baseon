@@ -1,2 +1,2 @@
 org.springframework.boot.env.EnvironmentPostProcessor=\
-  io.github.ayongbox.baseon.starter.swagger.config.ProdProfileSwaggerDisabler
+  io.github.ayongbox.baseon.starter.swagger.config.SwaggerEnvironmentPostProcessor

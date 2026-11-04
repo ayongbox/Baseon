@@ -15,7 +15,7 @@
     <packaging>jar</packaging>
 
     <name>baseon-starter-swagger</name>
-    <description>OpenAPI3 文档定制：全局 Bearer 认证 + 生产 Profile 自动硬关闭</description>
+    <description>OpenAPI3 文档定制：Knife4j UI 增强 + 全局 Bearer 认证 + 生产 Profile 自动硬关闭</description>
 
     <dependencies>
         <dependency>
@@ -23,15 +23,29 @@
             <artifactId>baseon-core</artifactId>
         </dependency>
 
-        <!-- 版本由父 POM dependencyManagement 锁定（springdoc 2.5.0） -->
+        <!--
+            Knife4j OpenAPI3（jakarta）starter：自带 springdoc-openapi-starter-webmvc-ui 传递依赖，
+            统一由 Knife4j 提供文档 UI（/doc.html），springdoc 版本由父 POM 锁定为 2.5.0
+            （覆盖 Knife4j 内置的 2.3.0，补丁级兼容）
+        -->
         <dependency>
-            <groupId>org.springdoc</groupId>
-            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <groupId>com.github.xiaoymin</groupId>
+            <artifactId>knife4j-openapi3-jakarta-spring-boot-starter</artifactId>
         </dependency>
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!--
+            运行时兼容性测试需要 servlet 上下文；
+            生产环境由业务的 spring-boot-starter-web 提供，这里仅 test scope
+        -->
+        <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
             <scope>test</scope>
         </dependency>
 

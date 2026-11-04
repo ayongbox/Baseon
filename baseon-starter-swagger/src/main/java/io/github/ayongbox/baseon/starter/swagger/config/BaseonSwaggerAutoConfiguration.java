@@ -36,6 +36,7 @@ import java.util.Set;
  * <p>生产防护第一层（定制层）：激活 profile 命中
  * {@code baseon.swagger.prod-profiles} 名单时，整个自动配置类被
  * {@link NonProdProfileCondition} 拦下，不装配任何定制 Bean。
+ * 生产防护第二层（端点层）由 {@link SwaggerEnvironmentPostProcessor} 兜底。
  */
 @AutoConfiguration
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)

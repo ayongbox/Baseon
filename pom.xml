@@ -80,7 +80,12 @@
         <resilience4j.version>2.2.0</resilience4j.version>
         <!-- 6 期新增：FastExcel（EasyExcel 停更后的社区续作，Apache 2.0）与 springdoc OpenAPI -->
         <fastexcel.version>1.2.0</fastexcel.version>
-        <springdoc.version>2.5.0</springdoc.version>
+        <!--
+            OpenAPI3 + Knife4j UI：Knife4j 4.5.0 内部依赖 springdoc 2.3.0，
+            且 Knife4jOpenApiCustomizer 调用了 2.3.0 的 SpringDocConfigProperties.getGroupConfigs()，
+            该方法在 2.5.0 被移除（运行时 NoSuchMethodError），故锁定 2.3.0 与 Knife4j 对齐。
+        -->
+        <springdoc.version>2.3.0</springdoc.version>
         <!-- 14 期新增：RocketMQ 经典 remoting 客户端（兼容 4.9/5.x 服务端）与 MinIO S3 SDK -->
         <rocketmq.version>4.9.7</rocketmq.version>
         <minio.version>8.5.17</minio.version>
@@ -88,6 +93,8 @@
         <shardingsphere.version>5.5.2</shardingsphere.version>
         <!-- 16 期新增：Apache Seata（2.1 起迁入 org.apache.seata，2.6.x 使用 jakarta，兼容 Boot 3） -->
         <seata.version>2.6.0</seata.version>
+        <!-- 17 期新增：Knife4j OpenAPI3 UI 增强（替代原生 Swagger UI，自带 springdoc 传递依赖） -->
+        <knife4j.version>4.5.0</knife4j.version>
 
         <flatten-maven-plugin.version>1.6.0</flatten-maven-plugin.version>
         <maven-enforcer-plugin.version>3.4.1</maven-enforcer-plugin.version>
@@ -348,6 +355,18 @@
                 <groupId>org.springdoc</groupId>
                 <artifactId>springdoc-openapi-starter-webflux-ui</artifactId>
                 <version>${springdoc.version}</version>
+            </dependency>
+            <!-- 17 期新增：Knife4j OpenAPI3（jakarta）starter 替换原生 Swagger UI，自带 springdoc 传递依赖 -->
+            <dependency>
+                <groupId>com.github.xiaoymin</groupId>
+                <artifactId>knife4j-openapi3-jakarta-spring-boot-starter</artifactId>
+                <version>${knife4j.version}</version>
+            </dependency>
+            <!-- 17 期新增：Knife4j 纯 UI 静态资源包（无 Java 类、无传递依赖），供 WebFlux 网关单独引入以提供 /doc.html -->
+            <dependency>
+                <groupId>com.github.xiaoymin</groupId>
+                <artifactId>knife4j-openapi3-ui</artifactId>
+                <version>${knife4j.version}</version>
             </dependency>
             <!-- 7 期：代码生成器读取表元数据，仅 baseon-generator-maven-plugin 使用 -->
             <dependency>

@@ -43,7 +43,23 @@ docker compose -f docs/assets/container/docker-compose.yml ps
 docker compose -f docs/assets/container/docker-compose.yml --profile monitoring up -d
 ```
 
-服务地址：demo-service `http://localhost:8091`，Nacos `http://localhost:8848/nacos`，MySQL `localhost:3306`，Redis `localhost:6379`。
+服务地址：demo-service `http://localhost:8091`（Knife4j 文档入口 `http://localhost:8091/doc.html`，API 规范 `http://localhost:8091/v3/api-docs`），Nacos `http://localhost:8848/nacos`，MySQL `localhost:3306`，Redis `localhost:6379`。
+
+## 本地开发模式（推荐：中间件容器化 + 服务本地跑）
+
+调试时改代码不想反复构建镜像，用这种方式：中间件（MySQL/Redis/Nacos）跑容器，demo-service 用 Maven 本地启动。
+
+```bash
+# 1. 只起中间件（不构建 demo-service 镜像）
+docker compose -f docs/assets/container/docker-compose.yml up -d mysql redis nacos
+
+# 2. 等待 Nacos（:8848）与 MySQL（:3306）就绪后，本地启动 demo-service
+mvn -pl samples/demo-service spring-boot:run
+```
+
+服务地址与全量编排一致：demo-service `http://localhost:8091`，Knife4j `http://localhost:8091/doc.html`。
+
+> 仅起中间件时，`docker compose up -d mysql redis nacos` 不会构建 demo-service 镜像，启动更快；如需单独跑 demo-service 容器可显式 `docker compose up -d demo-service --build`。
 
 ## 部署到 K8s
 
@@ -71,7 +87,7 @@ kubectl apply -f docs/assets/container/k8s/hpa.yaml
 3. **堆参数不要写死**：`JAVA_OPTS` 使用 `MaxRAMPercentage`，K8s `limits.memory` 变更后堆自动跟随（P-030）；
 4. **Nacos 2.x 必须暴露 9848**：只映射 8848 时客户端 gRPC 连接失败，服务注册不上；
 5. **Compose 中的凭据仅限本地**：Nacos Token、MySQL root、JWT secret 都是演示值，生产走 Secret/KMS；
-6. **探针路径与 profile 相关**：`prod` 下 Swagger 与调试端点由 starter 硬关闭，探针只依赖 actuator；
+6. **探针路径与 profile 相关**：`prod` 下 Knife4j（`/doc.html`）、Swagger 与调试端点由 starter 硬关闭，探针只依赖 actuator；
 7. **HPA 需要 metrics-server**：未部署时 CPU 指标为 unknown，副本数保持不变；
 8. **MySQL init 脚本只执行一次**：仅在 `mysql-data` 数据卷首次初始化时运行，改脚本后需删除数据卷重建；
 9. **Dockerfile 面向可执行服务模块**：`MODULE` 指向带 `spring-boot-maven-plugin:repackage` 的服务模块（如 `samples/demo-service`），不要指向纯库 Starter。

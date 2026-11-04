@@ -3,7 +3,7 @@
 - **状态**：已采纳（2 期起，6 期补强）
 - **日期**：2026-10（2 期起）
 - **决策者**：脚手架维护者
-- **关联**：各 Starter 的 `BaseonXxxAutoConfiguration`、`ProdProfileSwaggerDisabler`、`DebugProdProfileGuard`
+- **关联**：各 Starter 的 `BaseonXxxAutoConfiguration`、`SwaggerEnvironmentPostProcessor`、`DebugProdProfileGuard`
 
 ## 背景
 
@@ -21,7 +21,7 @@
 4. 生产危险能力采用**双层硬失效**：
    - 第一层：装配条件按 active profile 判定，命中生产 profile 直接不装配；
    - 第二层：入口再执行一次 profile 守卫（如 `DebugEndpointController` 每个端点调用 `DebugProdProfileGuard`），即使装配被误判也不可用；
-   - Swagger 额外用 `EnvironmentPostProcessor`（`ProdProfileSwaggerDisabler`）在环境准备阶段改写配置，优先级高于 yml / 配置中心；
+   - Swagger 额外用 `EnvironmentPostProcessor`（`SwaggerEnvironmentPostProcessor`）在环境准备阶段改写配置，优先级高于 yml / 配置中心；
 5. 生产 profile 名单统一由 `baseon.<能力>.prod-profiles` 配置，默认 `["prod"]`，按企业命名扩展。
 
 ## 后果
@@ -48,7 +48,7 @@
 
 ## 验证方式
 
-- `ProdProfileSwaggerDisablerTest` / `ProdProfileSwaggerDisabler` 相关测试；
+- `SwaggerEnvironmentPostProcessorTest` / `SwaggerEnvironmentPostProcessor` 相关测试；
 - `DebugEndpointController` 在 prod profile 下返回 404 的集成测试；
 - 所有 Starter 在 `AutoConfiguration.imports` 中可检索到装配类。
 

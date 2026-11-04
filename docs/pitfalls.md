@@ -454,3 +454,18 @@ new DefaultMQPushConsumer(group,
 **解决**：Boot 3 工程一律使用 `org.apache.seata:seata-spring-boot-starter` 2.1.0+（本仓库锁定 2.6.0）。判定方法：`javap -cp <jar> ...SeataHttpAutoConfiguration | grep jakarta`，能命中 jakarta 即为 Boot 3 线；另确认 jar 内有 `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports`（Boot 3 只认这个，不认 `spring.factories` 里的自动配置）。
 
 **规避**：第三方坐标迁移类问题不要凭记忆选版本，先查 `maven-metadata.xml` 或 `javap`/`unzip -l` 实际产物再定版本；移植期最容易踩「group 变了」「javax→jakarta 了」两类。
+
+## P-038 · Knife4j 4.5.0 与 springdoc 2.5.0 运行时不兼容（`NoSuchMethodError: getGroupConfigs`）
+
+**现象**：引入 `knife4j-openapi3-jakarta-spring-boot-starter:4.5.0` 后，应用启动正常，访问 `/doc.html` 返回 200，但 `/v3/api-docs` 返回 500，日志报：
+
+```
+java.lang.NoSuchMethodError: 'java.util.List org.springdoc.core.properties.SpringDocConfigProperties.getGroupConfigs()'
+    at com.github.xiaoymin.knife4j.spring.extension.Knife4jOpenApiCustomizer.addOrderExtension
+```
+
+**根因**：Knife4j 4.5.0 内部依赖 springdoc 2.3.0，其 `Knife4jOpenApiCustomizer` 调用了 2.3.0 的 `SpringDocConfigProperties.getGroupConfigs()`；该方法在 springdoc 2.4+ 被重构移除（分组配置改由 `GroupedOpenApi` Bean 承载）。父 POM 若把 springdoc 锁定到 2.5.0，会覆盖 Knife4j 传递的 2.3.0，运行时即抛 `NoSuchMethodError`。
+
+**解决**：把 springdoc 版本锁定到与 Knife4j 对齐的 **2.3.0**（Knife4j 4.5.0 的内置版本）。本仓库项目仅使用 springdoc 的稳定 API（`OpenApiCustomizer`、`SwaggerUiConfigProperties`、`SwaggerUrl`），2.3.0 全部具备，降级无副作用。
+
+**规避**：封装「自带 springdoc 传递依赖」的第三方 starter 时，不要默认用最新 springdoc 覆盖其内置版本——先确认双方 API 对齐。判定方法：`javap -cp <springdoc-jar> org.springdoc.core.properties.SpringDocConfigProperties | grep getGroupConfigs`，无该方法即说明版本过新；或直接沿用第三方 starter 内置的 springdoc 版本。

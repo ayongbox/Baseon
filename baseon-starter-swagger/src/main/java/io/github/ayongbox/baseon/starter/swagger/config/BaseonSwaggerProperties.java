@@ -12,10 +12,10 @@ import java.util.List;
 public class BaseonSwaggerProperties {
 
     /**
-     * 总开关：false 时不装配 OpenAPI 定制 Bean。默认 true。
+     * 总开关：false 时不装配 OpenAPI 定制 Bean，并关闭 Knife4j。默认 true。
      *
-     * <p>注意：该开关只管本模块的定制 Bean，不管 springdoc 端点本身；
-     * 生产环境的端点硬关闭由 {@link ProdProfileSwaggerDisabler} 兜底。
+     * <p>注意：该开关只管本模块的定制 Bean 与 Knife4j 开关，不管 springdoc 端点本身；
+     * 生产环境的端点硬关闭由 {@code SwaggerEnvironmentPostProcessor} 兜底。
      */
     private boolean enabled = true;
 
