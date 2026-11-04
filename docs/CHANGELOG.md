@@ -5,6 +5,34 @@
 
 ---
 
+## [1.0.0-SNAPSHOT] · 17 期：Swagger 文档 UI 升级为 Knife4j（S-19 改造）
+
+**日期**：2026-11-04
+
+### 变更内容
+
+- `baseon-starter-swagger` 依赖由 `springdoc-openapi-starter-webmvc-ui` 替换为 `knife4j-openapi3-jakarta-spring-boot-starter:4.5.0`（自带 springdoc 传递依赖）。**springdoc 版本由 2.5.0 降为 2.3.0**：Knife4j 4.5.0 的 `Knife4jOpenApiCustomizer` 调用了 springdoc 2.3.0 的 `SpringDocConfigProperties.getGroupConfigs()`，该方法在 2.4+ 被移除，若锁定 2.5.0 会在运行时抛 `NoSuchMethodError`（详见 P-038）；项目仅使用 springdoc 稳定 API，降级无副作用。
+- 文档 UI 入口由 `/swagger-ui/index.html` 变更为 Knife4j 的 `/doc.html`，获得离线导出、接口分组、全局参数等增强能力。
+- `ProdProfileSwaggerDisabler` 重命名为 `SwaggerEnvironmentPostProcessor`，职责从「生产硬关闭」扩展为统一管理 springdoc + Knife4j 启停：
+  - **显式关闭**（`baseon.swagger.enabled=false`）：`knife4j.enable=false`；
+  - **生产硬关闭**：`springdoc.api-docs/swagger-ui.enabled=false` + `knife4j.enable=false` + `knife4j.production=true`；
+  - **非生产自动开启**：`knife4j.enable=true`（Knife4j 4.x 的 enable 默认 false，必须显式打开才能渲染 `/doc.html`，由本处理器兜底，保证「starter 引入即用」）。
+- 新增 `Knife4jRuntimeCompatibilityTest`：真实启动 Spring 上下文，验证 OpenAPI Bean 与 `Knife4jOpenApiCustomizer` 在 Knife4j 4.5.0 + springdoc 2.3.0 下正常装配。
+
+### 影响面（业务升级须知）
+
+- 文档访问路径变更：`/swagger-ui/index.html` → `/doc.html`，前端/网关/收藏夹需同步更新；网关转发规则需放行 `/doc.html`、`/v3/api-docs/**`、`/webjars/**`、`/favicon.ico`。
+- 业务代码零改动：OpenAPI 3 注解（`@Tag`/`@Operation` 等）完全不变。
+- 生产硬关闭机制增强：原双层（定制层 + springdoc 端点层）变为三层（+ Knife4j 层），生产环境 `/doc.html` 同样不可访问。
+
+### 注意事项
+
+1. **Knife4j 4.x 的 `knife4j.enable` 默认 false**：非生产由 `SwaggerEnvironmentPostProcessor` 自动打开，业务无需手动配置；若绕过本 starter 直用 Knife4j 则必须显式 `knife4j.enable: true`。
+2. **网关聚合仍用 springdoc webflux**：Knife4j 无官方 webflux starter，网关侧文档聚合继续使用 `springdoc-openapi-starter-webflux-ui`，业务服务侧关闭本地 UI 即可。
+3. **springdoc 版本锁定为 2.3.0**：与 Knife4j 4.5.0 内置版本对齐，避免 `SpringDocConfigProperties.getGroupConfigs()` 的 `NoSuchMethodError`；项目仅用 springdoc 稳定 API，降级无副作用（P-038）。
+
+---
+
 ## [1.0.0-SNAPSHOT] · 16 期：分布式事务（S-23 starter-seata，可选）
 
 **日期**：2026-11-01

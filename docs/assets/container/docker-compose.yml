@@ -107,7 +107,7 @@ services:
       BASEON_DATASOURCE_MASTER_URL: "jdbc:mysql://mysql:3306/baseon_master?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai"
       BASEON_DATASOURCE_SLAVES_0_URL: "jdbc:mysql://mysql:3306/baseon_slave?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai"
       BASEON_AUTH_SECRET: "baseon-local-compose-secret-do-not-use-in-prod"
-      BASEON_AUTH_IGNORE_PATHS: "/auth/login,/auth/refresh,/actuator/health,/actuator/health/liveness,/actuator/health/readiness,/v3/api-docs/**,/swagger-ui/**,/debug/**"
+      BASEON_AUTH_IGNORE_PATHS: "/auth/login,/auth/refresh,/actuator/health,/actuator/health/liveness,/actuator/health/readiness,/v3/api-docs/**,/swagger-ui/**,/doc.html,/webjars/**,/debug/**"
       MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info,prometheus"
       MANAGEMENT_ENDPOINT_HEALTH_PROBES_ENABLED: "true"
       MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: "never"

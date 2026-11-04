@@ -23,6 +23,16 @@ spring:
           # serviceId 统一转小写后再匹配，避免大小写不一致导致路由 503
           lower-case-service-id: true
       routes:
+        # 17 期：网关只保留 Knife4j（/doc.html）作为文档 UI，屏蔽原生 Swagger UI 入口。
+        # 不能用 springdoc.swagger-ui.enabled=false——Knife4j 前端依赖 /v3/api-docs/swagger-config
+        # 端点（由 springdoc swagger-ui 自动配置提供）获取服务列表，关掉会导致 Knife4j 拿不到下拉。
+        # 这里通过 Gateway 路由把原生 Swagger UI 的 HTML/静态资源路径拦截为 404，保留 swagger-config。
+        - id: block-native-swagger-ui
+          uri: no://op
+          predicates:
+            - Path=/swagger-ui.html,/swagger-ui/**,/webjars/swagger-ui/**
+          filters:
+            - SetStatus=404
         # 显式路由示例（谓词 + 过滤器写法）：/api/demo/** 剥离前两段前缀后
         # 经负载均衡转发给 baseon-demo-service，即 /api/demo/xxx -> lb://baseon-demo-service/xxx
         - id: demo-service-explicit

@@ -66,7 +66,7 @@ docs/
 | `baseon-starter-resilience` | `@Degrade` 三策略兜底（CACHE/DEFAULT/FAIL_FAST）、熔断状态告警 SPI、复用 resilience4j 原生熔断/舱壁 | ✅ 可用 |
 | `baseon-starter-idempotent` | `@Idempotent` + Redis 原子占位、key 三级来源（SpEL/请求头/方法级）、租户前缀联动 | ✅ 可用 |
 | `baseon-starter-excel` | FastExcel 封装：导出自动响应头、导入逐行容错（行号+原因）、ZIP 魔数嗅探 | ✅ 可用 |
-| `baseon-starter-swagger` | OpenAPI3 + Bearer scheme（联动 auth）、生产 profile 双层硬关闭 | ✅ 可用 |
+| `baseon-starter-swagger` | OpenAPI3（Knife4j UI，`/doc.html`）+ Bearer scheme（联动 auth）、生产 profile 三层硬关闭 | ✅ 可用 |
 | `baseon-starter-log` | `@OperateLog` 操作审计（操作人/租户/traceId/耗时/成败）、OperateLogHandler SPI | ✅ 可用 |
 | `baseon-starter-debug-tools` | `/debug/context`、`/debug/profiles`，生产三层硬失效 | ✅ 可用 |
 | `baseon-starter-tracing-otel` | OTel 分布式追踪接入（span 树/OTLP 上报/本地日志档），与 starter-trace 统一 traceId | ✅ 可用 |

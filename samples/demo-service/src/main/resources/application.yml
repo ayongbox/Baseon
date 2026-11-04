@@ -46,11 +46,13 @@ spring:
       host: 127.0.0.1
       port: 6379
 
-# 7 期：Swagger 网关聚合场景，业务服务只保留 /v3/api-docs 端点供网关拉取，
-# UI 统一收敛到网关（demo-gateway:8090），本服务不再单独暴露 swagger-ui
+# 17 期起：业务服务使用 Knife4j（/doc.html）作为文档 UI。
+# Knife4j 4.x 加载时依赖 springdoc 的 /v3/api-docs/swagger-config 端点定位文档，
+# 因此 swagger-ui 必须开启（仅为提供配置端点，原生 Swagger UI 也会随之可用，不影响）。
+# 网关侧（demo-gateway:8090）仍可通过聚合 UI 统一查看各服务文档。
 springdoc:
   swagger-ui:
-    enabled: false
+    enabled: true
 
 # 7.5 期：OTel 分布式追踪。本地无 collector：关闭 OTLP 上报避免重试噪音，
 # 开启日志导出档直接在控制台看 span；生产环境反过来（关 log-exporter、配
@@ -72,12 +74,14 @@ baseon:
   # 禁止把生产密钥写进代码库，也禁止照搬本值。
   auth:
     secret: baseon-demo-local-dev-secret-do-not-use-in-prod
-    # 放行登录/刷新 + Swagger 端点 + debug 端点（6 期），其余接口默认要求登录。
+    # 放行登录/刷新 + Swagger/Knife4j 端点 + debug 端点（6 期），其余接口默认要求登录。
     # 注意 ignore-paths 是整体覆盖默认列表，/login、/refresh 必须一并列出
     ignore-paths:
       - /auth/login
       - /auth/refresh
       - /swagger-ui/**
+      - /doc.html
+      - /webjars/**
       - /v3/api-docs/**
       - /debug/**
   # 6 期：Swagger 文档元信息（生产 profile 下由 starter-swagger 双层硬关闭，无需在此开关）

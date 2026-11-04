@@ -40,6 +40,15 @@
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webflux-ui</artifactId>
         </dependency>
+        <!--
+            Knife4j 前端静态资源（仅 doc.html + webjars，0 个 Java 类、无传递依赖）。
+            网关是 WebFlux 栈无法使用 Knife4j 的 webmvc starter，但可单独引入 UI 静态包，
+            让网关也能通过 /doc.html 用 Knife4j 风格展示聚合文档；文档数据仍由 springdoc webflux 提供。
+        -->
+        <dependency>
+            <groupId>com.github.xiaoymin</groupId>
+            <artifactId>knife4j-openapi3-ui</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
