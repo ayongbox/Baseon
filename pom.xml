@@ -75,6 +75,8 @@
         <mybatis-plus.version>3.5.9</mybatis-plus.version>
         <caffeine.version>3.1.8</caffeine.version>
         <mysql-connector.version>8.4.0</mysql-connector.version>
+        <!-- JSON 日志编码器：与 logback 1.4.x（Boot 3.2）兼容，optional 引入 -->
+        <logstash-logback-encoder.version>7.4</logstash-logback-encoder.version>
         <!-- 5 期新增：JWT 与熔断降级（sentinel 由 SCA BOM 管理，无需在此锁定） -->
         <jjwt.version>0.12.6</jjwt.version>
         <resilience4j.version>2.2.0</resilience4j.version>
@@ -314,6 +316,12 @@
                 <groupId>com.mysql</groupId>
                 <artifactId>mysql-connector-j</artifactId>
                 <version>${mysql-connector.version}</version>
+            </dependency>
+            <!-- JSON 日志编码器，optional：业务按需引入，不引入不影响文本日志 -->
+            <dependency>
+                <groupId>net.logstash.logback</groupId>
+                <artifactId>logstash-logback-encoder</artifactId>
+                <version>${logstash-logback-encoder.version}</version>
             </dependency>
 
             <!-- 5 期新增第三方：jjwt 三件套（api 编译期，impl/jackson 运行期） -->

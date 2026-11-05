@@ -47,6 +47,15 @@
             <optional>true</optional>
         </dependency>
 
+        <!-- JSON 日志编码器（optional）：业务引入后，prod profile 自动输出 JSON 日志，
+             便于观测云/ELK/Loki 等采集端直接字段化解析，traceId 与 MDC 取值一致。
+             不引入时 logback-spring.xml 的 JSON appender 因类缺失被 logback 忽略，文本格式照常。 -->
+        <dependency>
+            <groupId>net.logstash.logback</groupId>
+            <artifactId>logstash-logback-encoder</artifactId>
+            <optional>true</optional>
+        </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-configuration-processor</artifactId>

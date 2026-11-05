@@ -7,6 +7,12 @@
   同名文件即可整体覆盖（业务 classes 目录优先于依赖 jar）。
 
   自定义时建议保留 %X{traceId:-} 占位，否则异步/全链路日志会失去关联键。
+
+  输出格式：
+    - 默认（非 prod profile）：文本格式，控制台人读友好；
+    - prod profile：JSON 格式（需业务引入 logstash-logback-encoder，optional），
+      便于观测云/ELK/Loki 等采集端直接字段化解析。未引入该依赖时 JSON appender
+      因类缺失被 logback 自动忽略，prod 下回退到文本格式。
 -->
 <configuration>
     <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
@@ -19,7 +25,27 @@
 
     <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
 
-    <root level="INFO">
-        <appender-ref ref="CONSOLE"/>
-    </root>
+    <!-- 非 prod：文本控制台 -->
+    <springProfile name="!prod">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+    </springProfile>
+
+    <!-- prod：JSON 控制台（logstash-logback-encoder 在场时生效） -->
+    <springProfile name="prod">
+        <appender name="JSON_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+                <!-- 自定义字段：与文本格式对齐，traceId 取 MDC，值与全链路一致 -->
+                <customFields>{"app":"${app}"}</customFields>
+                <includeMdcKeyName>traceId</includeMdcKeyName>
+                <includeMdcKeyName>spanId</includeMdcKeyName>
+                <!-- 时间戳用 ISO8601，便于后端解析 -->
+                <timestampPattern>yyyy-MM-dd'T'HH:mm:ss.SSSXXX</timestampPattern>
+            </encoder>
+        </appender>
+        <root level="INFO">
+            <appender-ref ref="JSON_CONSOLE"/>
+        </root>
+    </springProfile>
 </configuration>

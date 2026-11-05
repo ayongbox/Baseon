@@ -138,3 +138,22 @@ if (traceId != null) {
 
 容器化部署只输出 console，由采集 Agent（Filebeat/Fluent Bit）收集，**不要配置文件 appender**；
 本地文件滚动策略各异，交给平台统一处理。
+
+### prod profile 输出 JSON 日志（可选）
+
+生产环境采集端（观测云 / ELK / Loki）对 JSON 日志可直接字段化解析，免去 grok/regex 切割，且 traceId 字段自动关联追踪。
+
+启用方式：业务 pom 引入 optional 依赖（版本由 BOM 管控）：
+
+```xml
+<dependency>
+    <groupId>net.logstash.logback</groupId>
+    <artifactId>logstash-logback-encoder</artifactId>
+</dependency>
+```
+
+引入后，以 `--spring.profiles.active=prod` 启动时，内置 `logback-spring.xml` 自动切换为 JSON 控制台输出，字段包含 `@timestamp`、`level`、`app`、`traceId`、`spanId`、`logger_name`、`message` 等。非 prod profile 仍输出文本格式。
+
+- 不引入该依赖时，prod profile 下 JSON appender 因类缺失被 logback 忽略，自动回退文本格式，不报错；
+- traceId/spanId 取自 MDC，与全链路追踪值一致，日志↔追踪关联不受格式切换影响；
+- 需自定义 JSON 字段时，业务提供自己的 `logback-spring.xml` 整体覆盖即可。
